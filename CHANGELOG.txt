@@ -1,28 +1,36 @@
 Speed Meter - Changelog
 =======================
 
-[0.1.0] - Foundation Release (versionName 0.1.0, versionCode 1)
----------------------------------------------------------------
+[0.2.0] - Foundation Update (versionName 0.2.0, versionCode 2)
+--------------------------------------------------------------
 
 Tech Stack
 ----------
 - Language:             Kotlin 2.1.20
-- UI Toolkit:           Jetpack Compose with Material 3 (Compose BOM 2024.12.01)
+- UI Toolkit:           Jetpack Compose with Material 3
+- Compose BOM:          2026.02.01
 - Build System:         Gradle (Kotlin DSL), Android Gradle Plugin 8.11.0
 - Compose Compiler:     Kotlin Compose compiler plugin (2.1.20)
 - Android Min SDK:      26 (Android 8.0 Oreo)
 - Android Target SDK:   36
 - Android Compile SDK:  36
-- JVM Target:           17
-- AndroidX Libraries:   core-ktx 1.15.0, lifecycle-runtime-ktx 2.8.7,
-                        activity-compose 1.9.3, collection-ktx 1.4.5
+- JVM Target:           17 (set explicitly for Java and Kotlin compilation)
+- Opt-in:               androidx.compose.material3.ExperimentalMaterial3Api
+- AndroidX Libraries:   core-ktx 1.16.0, lifecycle-runtime-ktx 2.9.0,
+                        activity-compose 1.10.1, collection-ktx 1.4.5
+- Compose Libraries:    foundation, material-icons-core, material3,
+                        runtime-saveable, ui, ui-graphics, ui-tooling-preview
 - Package/Namespace:    com.sdcgroup.speedmeter
 - CI (ci.yml):          GitHub Actions. Builds a debug APK on push and pull
                         requests to main, signs it with v1/v2/v3/v4 schemes,
                         and verifies the signatures.
 - Release (release.yml): GitHub Actions. Runs on tags matching v*. Builds a
                         release APK, signs it with v1/v2/v3/v4 schemes,
-                        verifies it, and publishes it to a GitHub Release.
+                        verifies it with apksigner (--print-certs), publishes
+                        it to a GitHub Release, and deletes the keystore
+                        after signing.
+- Actions versions:     checkout v6, setup-java v6, setup-gradle v6,
+                        upload-artifact v7, action-gh-release v3
 
 Build Configuration
 -------------------
@@ -38,22 +46,41 @@ Build Configuration
 Features Implemented
 --------------------
 App Shell
-- MainActivity extends ComponentActivity and sets Compose content in onCreate.
+- MainActivity extends ComponentActivity and hosts SpeedMeterApp() in
+  setContent.
 - enableEdgeToEdge() is called for an edge-to-edge display.
-- The screen is currently an empty Material 3 Surface filled to the window,
-  using the theme background colour. There is no top app bar and no
-  placeholder content yet.
-- One launcher activity, exported, with the label "Speed Meter".
+- SpeedMeterApp wraps the screen in MyComposeApplicationTheme and a Material 3
+  Scaffold.
+- The top bar (ui/screens/TopAppBar.kt, SpeedMeterTopAppBar) shows the title
+  "Speed Meter" from strings.xml. It uses pinned scroll behaviour through
+  TopAppBarDefaults.pinnedScrollBehavior() and a nestedScroll connection on the
+  Scaffold.
+- The body is an empty Surface filled to the window, using the theme background
+  colour. There is no content yet.
+- Manifest: one launcher activity (MainActivity), exported = true,
+  screenOrientation = sensor, windowSoftInputMode = adjustResize.
 
 Theming (ui/theme)
 - Color.kt: Purple, PurpleGrey and Pink palettes used as the fallback scheme.
-- Theme.kt: MyComposeApplicationTheme.
-  - Light and dark schemes, chosen from isSystemInDarkTheme().
+- Theme.kt: MyComposeApplicationTheme(darkTheme, dynamicColor = true).
+  - Light and dark schemes. The initial mode comes from isSystemInDarkTheme().
   - Dynamic colour (Material You) on API 31+ via dynamicLightColorScheme and
     dynamicDarkColorScheme.
   - System bar icon appearance follows the theme through WindowCompat's
-    insets controller.
+    insets controller (isAppearanceLightStatusBars and
+    isAppearanceLightNavigationBars).
 - Type.kt: base Typography with a bodyLarge style.
+- Dark mode state in SpeedMeterApp is held with rememberSaveable and seeded from
+  the system setting. No UI currently changes it.
+
+Components (ui/screens)
+- TopAppBar.kt: SpeedMeterTopAppBar(title, isDarkTheme, onThemeToggle,
+  scrollBehavior, modifier). It renders a Material 3 TopAppBar and does not
+  yet use isDarkTheme or onThemeToggle.
+- UiWidgets.kt: ThemeSwitch(checked, onCheckedChange, modifier, enabled), a
+  Material 3 Switch with a check icon in the thumb. It is not yet placed in
+  any screen. It triggers LongPress haptic feedback on toggle and sets the
+  content description "Toggle dark theme".
 
 Layout Utilities (ui/utils)
 - WindowSizeClass.kt: width classes (ExtraCompact < 300dp, Compact < 600dp,
@@ -73,17 +100,50 @@ Adaptive App Icon
 - Monochrome: drawable/ic_launcher_monochrome.xml for Android 13+ themed icons.
 - Source: assets/ic_launcher.svg, matching the vector drawables.
 
-Manifest and Backup
-- allowBackup = true, with default backup_rules.xml and
-  data_extraction_rules.xml.
+Manifest, Backup and Config
+- allowBackup = true, with backup_rules.xml (fullBackupContent) and
+  data_extraction_rules.xml (dataExtractionRules).
 - No permissions are requested.
 - .gitignore files at the project root and in the app module.
+
+Changes Since 0.1.0
+-------------------
+- Added the top app bar with pinned scroll behaviour (replaces the empty
+  Scaffold-less shell).
+- Added SpeedMeterApp, the theme state holder, and the ThemeSwitch and
+  SpeedMeterTopAppBar components (ThemeSwitch not yet visible).
+- Screen orientation changed from locked to sensor-driven.
+- Added adjustResize for keyboard handling.
+- Added the Compose Foundation, Material Icons Core, and Runtime Saveable
+  libraries.
+- Upgraded AndroidX Core KTX, Lifecycle Runtime KTX, Activity Compose, and the
+  Compose BOM.
+- Added JVM 17 explicit compile settings and the Material 3 experimental opt-in.
+- Release pipeline now adds a v4 signature, verifies with apksigner
+  --print-certs, and deletes the keystore after signing.
+- Updated GitHub Actions versions.
+
+[0.1.0] - Foundation Release (versionName 0.1.0, versionCode 1)
+---------------------------------------------------------------
+
+- Initial app shell: MainActivity with enableEdgeToEdge() and an empty Material 3
+  Surface.
+- Theming system: light and dark schemes, dynamic colour on API 31+, and system
+  bar icon appearance.
+- Adaptive app icon: background, 7-segment gauge foreground, night variants,
+  and monochrome icon for Android 13+.
+- Release build with R8/ProGuard minification and a conditional signing config.
+- CI workflow for debug APK builds and a release workflow for tagged builds.
+- Backup and data-extraction rules; .gitignore files.
 
 Known Limitations
 -----------------
 - No network speed measurement, and no speed calculation logic.
 - No permissions, foreground service, or notification.
+- No visible theme toggle: ThemeSwitch is defined but not placed in the app bar.
+  The dark mode state is not user-controllable yet.
 - No DataStore or other persistence layer.
 - No speed gauge logic connected to the icon's design.
 - No settings, history, or about screens.
 - No unit or instrumented tests.
+- Pinned scroll behaviour has no visible effect until scrollable content exists.

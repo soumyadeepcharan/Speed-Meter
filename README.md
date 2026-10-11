@@ -6,34 +6,37 @@
 
 Speed Meter is an Android app that will show how fast your phone's network is uploading and downloading data.
 
-The app is in its early foundation stage. The app shell, theme, and app icon are in place. The speed features are still being built.
+The app is in its early foundation stage. The app bar, theme, and app icon are in place. The speed features are still being built.
 
 ---
 
-## Current Status (Version 0.1.0)
+## Current Status (Version 0.2.0)
 
-Version 0.1.0 is the first foundation release. You can install and open the app, but it does not measure network speed yet. The main screen is currently blank.
+Version 0.2.0 is a foundation release. You can install and open the app, but it does not measure network speed yet. The main screen shows the title bar and an empty area below it.
 
 ---
 
 ## Features Available Now
 
-- **Install and open the app** on any Android phone running Android 8.0 (Oreo) or newer.
+- **Title bar.** The top of the screen shows "Speed Meter". It stays in place as you scroll.
 - **Light and dark mode.** The app follows your phone's system setting automatically.
 - **Wallpaper colours (Android 12 and newer).** On supported phones, the app picks its colours from your wallpaper.
-- **Full-screen display.** Content runs edge to edge for an immersive look.
+- **Full-screen display.** Content runs edge to edge behind the status bar and navigation bar.
 - **Matching system bars.** The status bar and navigation bar icons switch between light and dark to suit the theme.
+- **Rotation.** The screen rotates with your device.
+- **Keyboard-friendly layout.** The layout shrinks when the on-screen keyboard appears, so nothing is hidden behind it.
 - **Speedometer app icon.** The icon shows a coloured gauge with a needle.
 - **Themed icon (Android 13 and newer).** A single-colour icon version matches your launcher's theme.
 - **Phones and tablets.** The layout adapts to different screen sizes.
 
 ---
 
-## Planned Features (Not in Version 0.1.0 Yet)
+## Planned Features (Not in Version 0.2.0 Yet)
 
 - **Live network speed.** See your current download and upload speed.
 - **Persistent notification.** Speeds shown in the notification bar at all times, with a custom status bar icon.
 - **Daily data usage.** Track mobile data and Wi-Fi usage for each day.
+- **Manual theme switch.** Choose light or dark mode from the title bar, independent of your system setting.
 - **Settings.** Options for the app's behaviour and appearance.
 
 ---
