@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  build:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Grant execute permission to Gradle
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+      - name: Find Android build tools
+        id: build-tools
+        run: |
+          BUILD_TOOLS_VERSION=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)
+          echo "version=$BUILD_TOOLS_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Using Android Build Tools: $BUILD_TOOLS_VERSION"
+
+      - name: Restore signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          chmod 600 "$RUNNER_TEMP/release.keystore"
+
+      - name: Add v1, v2 and v3 signatures
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/${{ steps.build-tools.outputs.version }}/apksigner"
+
+          "$APKSIGNER" sign \
+            --ks "$RUNNER_TEMP/release.keystore" \
+            --ks-pass env:KEYSTORE_PASSWORD \
+            --ks-key-alias "$KEY_ALIAS" \
+            --key-pass env:KEY_PASSWORD \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            app/build/outputs/apk/debug/*.apk
+
+      - name: Generate v4 signature
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/${{ steps.build-tools.outputs.version }}/apksigner"
+
+          "$APKSIGNER" sign \
+            --ks "$RUNNER_TEMP/release.keystore" \
+            --ks-pass env:KEYSTORE_PASSWORD \
+            --ks-key-alias "$KEY_ALIAS" \
+            --key-pass env:KEY_PASSWORD \
+            --v4-signing-enabled true \
+            app/build/outputs/apk/debug/*.apk
+
+      - name: Verify all APK signature schemes
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/${{ steps.build-tools.outputs.version }}/apksigner"
+
+          "$APKSIGNER" verify \
+            --verbose \
+            app/build/outputs/apk/debug/*.apk
+
+      - name: Upload Debug APK
+        id: upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: speed-meter-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+
+      - name: Delete Debug APK artifact
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api --method DELETE "repos/${{ github.repository }}/actions/artifacts/${{ steps.upload.outputs.artifact-id }}"
+
+      - name: Delete build output
+        if: success()
+        run: rm -rf app/build
+          

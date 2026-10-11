@@ -1,0 +1,89 @@
+Speed Meter - Changelog
+=======================
+
+[0.1.0] - Foundation Release (versionName 0.1.0, versionCode 1)
+---------------------------------------------------------------
+
+Tech Stack
+----------
+- Language:             Kotlin 2.1.20
+- UI Toolkit:           Jetpack Compose with Material 3 (Compose BOM 2024.12.01)
+- Build System:         Gradle (Kotlin DSL), Android Gradle Plugin 8.11.0
+- Compose Compiler:     Kotlin Compose compiler plugin (2.1.20)
+- Android Min SDK:      26 (Android 8.0 Oreo)
+- Android Target SDK:   36
+- Android Compile SDK:  36
+- JVM Target:           17
+- AndroidX Libraries:   core-ktx 1.15.0, lifecycle-runtime-ktx 2.8.7,
+                        activity-compose 1.9.3, collection-ktx 1.4.5
+- Package/Namespace:    com.sdcgroup.speedmeter
+- CI (ci.yml):          GitHub Actions. Builds a debug APK on push and pull
+                        requests to main, signs it with v1/v2/v3/v4 schemes,
+                        and verifies the signatures.
+- Release (release.yml): GitHub Actions. Runs on tags matching v*. Builds a
+                        release APK, signs it with v1/v2/v3/v4 schemes,
+                        verifies it, and publishes it to a GitHub Release.
+
+Build Configuration
+-------------------
+- Release builds use R8/ProGuard minification (proguard-android-optimize.txt
+  plus proguard-rules.pro).
+- Release signing reads storeFile, storePassword, keyAlias, and keyPassword
+  from release.properties when present. CI reads them from environment
+  variables instead.
+- Lint checks on release builds are disabled (checkReleaseBuilds = false).
+- AndroidX enabled; non-transitive R class enabled; Gradle configuration
+  cache enabled.
+
+Features Implemented
+--------------------
+App Shell
+- MainActivity extends ComponentActivity and sets Compose content in onCreate.
+- enableEdgeToEdge() is called for an edge-to-edge display.
+- The screen is currently an empty Material 3 Surface filled to the window,
+  using the theme background colour. There is no top app bar and no
+  placeholder content yet.
+- One launcher activity, exported, with the label "Speed Meter".
+
+Theming (ui/theme)
+- Color.kt: Purple, PurpleGrey and Pink palettes used as the fallback scheme.
+- Theme.kt: MyComposeApplicationTheme.
+  - Light and dark schemes, chosen from isSystemInDarkTheme().
+  - Dynamic colour (Material You) on API 31+ via dynamicLightColorScheme and
+    dynamicDarkColorScheme.
+  - System bar icon appearance follows the theme through WindowCompat's
+    insets controller.
+- Type.kt: base Typography with a bodyLarge style.
+
+Layout Utilities (ui/utils)
+- WindowSizeClass.kt: width classes (ExtraCompact < 300dp, Compact < 600dp,
+  Medium < 840dp, Expanded < 1200dp, Large < 1600dp, ExtraLarge otherwise)
+  and height classes (Compact < 480dp, Medium < 900dp, Expanded otherwise),
+  with remember-based Composable helpers.
+- WindowSizeDefaults.kt: supporting defaults for the window size helpers.
+
+Adaptive App Icon
+- Launcher icon definitions in mipmap-anydpi-v26 and mipmap-anydpi-v33
+  (standard and round).
+- Background: drawable/ic_launcher_background.xml (light) and
+  drawable-night/ic_launcher_background.xml (dark).
+- Foreground: drawable/ and drawable-v24/ ic_launcher_foreground.xml, with
+  drawable-night/ and drawable-night-v24/ dark variants. Design: a 7-segment
+  coloured circular gauge arc with a needle group.
+- Monochrome: drawable/ic_launcher_monochrome.xml for Android 13+ themed icons.
+- Source: assets/ic_launcher.svg, matching the vector drawables.
+
+Manifest and Backup
+- allowBackup = true, with default backup_rules.xml and
+  data_extraction_rules.xml.
+- No permissions are requested.
+- .gitignore files at the project root and in the app module.
+
+Known Limitations
+-----------------
+- No network speed measurement, and no speed calculation logic.
+- No permissions, foreground service, or notification.
+- No DataStore or other persistence layer.
+- No speed gauge logic connected to the icon's design.
+- No settings, history, or about screens.
+- No unit or instrumented tests.

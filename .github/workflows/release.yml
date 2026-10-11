@@ -1,0 +1,145 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
+      - name: Restore signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > release.keystore
+          chmod 600 release.keystore
+
+      - name: Build release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          CI: true
+        run: |
+          ./gradlew assembleRelease
+
+      - name: Find Android build tools
+        id: build-tools
+        run: |
+          BUILD_TOOLS_VERSION=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)
+          echo "version=$BUILD_TOOLS_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Using Android Build Tools: $BUILD_TOOLS_VERSION"
+
+      - name: Add v1, v2 and v3 signatures
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/${{ steps.build-tools.outputs.version }}/apksigner"
+          APK="app/build/outputs/apk/release/app-release.apk"
+
+          "$APKSIGNER" sign \
+            --ks release.keystore \
+            --ks-pass env:KEYSTORE_PASSWORD \
+            --ks-key-alias "$KEY_ALIAS" \
+            --key-pass env:KEY_PASSWORD \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            "$APK"
+
+      - name: Generate v4 signature
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/${{ steps.build-tools.outputs.version }}/apksigner"
+          APK="app/build/outputs/apk/release/app-release.apk"
+
+          "$APKSIGNER" sign \
+            --ks release.keystore \
+            --ks-pass env:KEYSTORE_PASSWORD \
+            --ks-key-alias "$KEY_ALIAS" \
+            --key-pass env:KEY_PASSWORD \
+            --v4-signing-enabled true \
+            "$APK"
+
+      - name: Verify APK signatures
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/${{ steps.build-tools.outputs.version }}/apksigner"
+          APK="app/build/outputs/apk/release/app-release.apk"
+
+          "$APKSIGNER" verify \
+            --verbose \
+            --print-certs \
+            "$APK"
+
+      - name: Verify v4 signature file
+        run: |
+          APK="app/build/outputs/apk/release/app-release.apk"
+          IDSIG="${APK}.idsig"
+
+          if [ ! -f "$IDSIG" ]; then
+            echo "ERROR: v4 signature file was not generated."
+            exit 1
+          fi
+
+          echo "v4 signature generated successfully:"
+          ls -lh "$IDSIG"
+
+      - name: Remove non-APK files from release directory
+        run: |
+          rm -f app/build/outputs/apk/release/*.apk.idsig
+          rm -f app/build/outputs/apk/release/output-metadata.json
+          
+      - name: Rename release APK
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mv app/build/outputs/apk/release/app-release.apk \
+             "app/build/outputs/apk/release/speed-meter-universal-release-v${VERSION}.apk"
+             
+      - name: Remove signing keystore
+        run: |
+          rm -f release.keystore
+
+      - name: Confirm release contains APK only
+        run: |
+          echo "Files going to GitHub Release:"
+          find app/build/outputs/apk/release -maxdepth 1 -type f -printf '%f\n'
+
+          if find app/build/outputs/apk/release -maxdepth 1 -type f ! -name "*.apk" | grep -q .; then
+            echo "ERROR: Non-APK file found in release directory."
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          body_path: release-notes.md
+          files: app/build/outputs/apk/release/*.apk
+          

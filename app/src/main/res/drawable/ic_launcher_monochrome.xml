@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M33.52,68.34 A25.00,25.00 0 0,1 29.00,53.69"
+        android:strokeColor="@color/ic_needle_color"
+        android:strokeWidth="6"
+        android:strokeLineCap="butt"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M29.00,53.69 A25.00,25.00 0 0,1 33.89,39.16"
+        android:strokeColor="@color/ic_needle_color"
+        android:strokeWidth="6"
+        android:strokeLineCap="butt"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M33.89,39.16 A25.00,25.00 0 0,1 46.33,30.21"
+        android:strokeColor="@color/ic_needle_color"
+        android:strokeWidth="6"
+        android:strokeLineCap="butt"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M46.33,30.21 A25.00,25.00 0 0,1 61.67,30.21"
+        android:strokeColor="@color/ic_needle_color"
+        android:strokeWidth="6"
+        android:strokeLineCap="butt"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M61.67,30.21 A25.00,25.00 0 0,1 74.11,39.16"
+        android:strokeColor="@color/ic_needle_color"
+        android:strokeWidth="6"
+        android:strokeLineCap="butt"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M74.11,39.16 A25.00,25.00 0 0,1 79.00,53.69"
+        android:strokeColor="@color/ic_needle_color"
+        android:strokeWidth="6"
+        android:strokeLineCap="butt"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M79.00,53.69 A25.00,25.00 0 0,1 74.48,68.34"
+        android:strokeColor="@color/ic_needle_color"
+        android:strokeWidth="6"
+        android:strokeLineCap="butt"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M54.00,54.00 L55.56,54.90 L54.00,29.00 L52.44,54.90 Z"
+        android:fillColor="@color/ic_needle_color" />
+    <path
+        android:pathData="M54.00,54.00 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"
+        android:fillColor="@color/ic_needle_color" />
+</vector>
