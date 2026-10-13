@@ -21,6 +21,8 @@ class NotificationHelper(private val context: Context) {
     private val notificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+    private val remoteViews = RemoteViews(context.packageName, R.layout.notification_layout)
+
     fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -43,8 +45,7 @@ class NotificationHelper(private val context: Context) {
     ): android.app.Notification {
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(IconCompat.createWithBitmap(iconBitmap))
-            .setCustomContentView(createRemoteViews(speed, totalDataUsage, wifiDataUsage))
-            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(updateRemoteViews(speed, totalDataUsage, wifiDataUsage))
             .setOngoing(true)
             .setLocalOnly(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -60,19 +61,27 @@ class NotificationHelper(private val context: Context) {
         )
     }
 
-    private fun createRemoteViews(
+    private fun updateRemoteViews(
         speed: Speed,
         totalDataUsage: String,
         wifiDataUsage: String
     ): RemoteViews {
-        val views = RemoteViews(context.packageName, R.layout.notification_layout)
-        views.setTextViewText(
-            R.id.notificationText,
-            "${context.getString(R.string.download_label)}: ${speed.down.speedValue} ${speed.down.speedUnit}  " +
-                "${context.getString(R.string.upload_label)}: ${speed.up.speedValue} ${speed.up.speedUnit}  " +
-                "${context.getString(R.string.data_label)}: $totalDataUsage  " +
-                "${context.getString(R.string.wifi_label)}: $wifiDataUsage"
+        remoteViews.setTextViewText(
+            R.id.notificationDownText,
+            "${context.getString(R.string.download_label)}: ${speed.down.speedValue}${speed.down.speedUnit}"
         )
-        return views
+        remoteViews.setTextViewText(
+            R.id.notificationUpText,
+            "${context.getString(R.string.upload_label)}: ${speed.up.speedValue}${speed.up.speedUnit}"
+        )
+        remoteViews.setTextViewText(
+            R.id.notificationDataText,
+            "${context.getString(R.string.data_label)}: $totalDataUsage"
+        )
+        remoteViews.setTextViewText(
+            R.id.notificationWifiText,
+            "${context.getString(R.string.wifi_label)}: $wifiDataUsage"
+        )
+        return remoteViews
     }
 }

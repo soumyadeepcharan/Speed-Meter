@@ -9,6 +9,9 @@ import android.os.Process
 import android.provider.Settings
 import android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -43,13 +46,18 @@ import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Verified
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -63,7 +71,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -84,6 +94,10 @@ import com.sdcgroup.speedmeter.data.setIndicatorEnabled
 import com.sdcgroup.speedmeter.service.SpeedMonitorService
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 
 private fun startIndicatorService(context: Context) {
     val intent = Intent(context, SpeedMonitorService::class.java)
@@ -170,14 +184,31 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     val itemSubtitle = stringResource(id = R.string.home_indicator_subtitle)
     val toggleDescription = stringResource(id = R.string.home_indicator_toggle_description)
 
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            startIndicatorService(context)
+            scope.launch { setIndicatorEnabled(context, true) }
+        }
+    }
+
     fun toggle(newValue: Boolean) {
-        scope.launch {
-            if (newValue) {
-                startIndicatorService(context)
-            } else {
-                stopIndicatorService(context)
+        if (newValue) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                return
             }
-            setIndicatorEnabled(context, newValue)
+            startIndicatorService(context)
+            scope.launch { setIndicatorEnabled(context, true) }
+        } else {
+            stopIndicatorService(context)
+            scope.launch { setIndicatorEnabled(context, false) }
         }
     }
 
@@ -250,7 +281,7 @@ fun MoreScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    var showHelpDialog by rememberSaveable { mutableStateOf(false) }
+    var showHelpSheet by rememberSaveable { mutableStateOf(false) }
     var showAboutDialog by rememberSaveable { mutableStateOf(false) }
     var showThemeDialog by rememberSaveable { mutableStateOf(false) }
     var showSpeedUnitDialog by rememberSaveable { mutableStateOf(false) }
@@ -389,14 +420,14 @@ fun MoreScreen(
                 } catch (_: Exception) { }
             }
             MoreAction.THEME -> showThemeDialog = true
-            MoreAction.HELP -> showHelpDialog = true
+            MoreAction.HELP -> showHelpSheet = true
             MoreAction.ABOUT -> showAboutDialog = true
             else -> { }
         }
     }
 
-    if (showHelpDialog) {
-        HelpFeedbackDialog(onDismiss = { showHelpDialog = false })
+    if (showHelpSheet) {
+        HelpFeedbackBottomSheet(onDismiss = { showHelpSheet = false })
     }
 
     if (showAboutDialog) {
@@ -587,9 +618,13 @@ private fun MoreListItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun HelpFeedbackDialog(onDismiss: () -> Unit) {
+private fun HelpFeedbackBottomSheet(onDismiss: () -> Unit) {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val scope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val appVersion = BuildConfig.VERSION_NAME
     val modelName = Build.MODEL
@@ -605,8 +640,6 @@ private fun HelpFeedbackDialog(onDismiss: () -> Unit) {
     val suggestFeatureBody = stringResource(id = R.string.email_feature_body)
     val emailRecipient = stringResource(id = R.string.email_recipient)
     val dialogLabel = stringResource(id = R.string.help_dialog_label)
-    val dialogTitle = stringResource(id = R.string.help_dialog_title)
-    val cancelLabel = stringResource(id = R.string.dialog_cancel)
 
     fun sendEmail(subject: String, body: String) {
         val intent = Intent(Intent.ACTION_SENDTO).apply {
@@ -620,33 +653,56 @@ private fun HelpFeedbackDialog(onDismiss: () -> Unit) {
         } catch (_: Exception) { }
     }
 
-    AppAlertDialog(
-        onDismissRequest = onDismiss,
-        title = dialogTitle,
-        icon = Icons.AutoMirrored.Rounded.Help,
-        dialogLabel = dialogLabel,
-        dismissButtonLabel = cancelLabel,
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                HelpActionRow(
-                    icon = Icons.Rounded.Lightbulb,
-                    label = stringResource(id = R.string.help_suggest_feature),
-                    onClick = {
-                        sendEmail(suggestFeatureSubject, suggestFeatureBody)
-                        onDismiss()
-                    },
-                )
-                HelpActionRow(
-                    icon = Icons.Rounded.BugReport,
-                    label = stringResource(id = R.string.help_report_bug),
-                    onClick = {
-                        sendEmail(bugReportSubject, bugReportBody)
-                        onDismiss()
-                    },
-                )
-            }
+    fun dismissSheet() {
+        scope.launch { sheetState.hide() }.invokeOnCompletion {
+            if (!sheetState.isVisible) onDismiss()
         }
+    }
+
+    val sheetHeight = configuration.screenHeightDp.dp * 0.3f
+    val contentAlpha by animateFloatAsState(
+        targetValue = if (sheetState.targetValue == SheetValue.Hidden) 0f else 1f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "helpSheetSharedAxisY"
     )
+    val density = androidx.compose.ui.platform.LocalDensity.current
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = null,
+        modifier = Modifier.semantics { contentDescription = dialogLabel },
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(sheetHeight)
+                .graphicsLayer {
+                    alpha = contentAlpha
+                    translationY = with(density) { (1f - contentAlpha) * 24.dp.toPx() }
+                }
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            HelpActionRow(
+                icon = Icons.Rounded.Lightbulb,
+                label = stringResource(id = R.string.help_suggest_feature),
+                onClick = {
+                    sendEmail(suggestFeatureSubject, suggestFeatureBody)
+                    dismissSheet()
+                },
+            )
+            HelpActionRow(
+                icon = Icons.Rounded.BugReport,
+                label = stringResource(id = R.string.help_report_bug),
+                onClick = {
+                    sendEmail(bugReportSubject, bugReportBody)
+                    dismissSheet()
+                },
+            )
+        }
+    }
 }
 
 @Composable
@@ -673,13 +729,14 @@ private fun HelpActionRow(
 
     val animatedStateLayerColor by animateColorAsState(
         targetValue = onContainerColor.copy(alpha = stateLayerOpacity),
+        animationSpec = tween(durationMillis = 100),
         label = "helpActionStateLayer_$label",
     )
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
+            .clip(MaterialTheme.shapes.extraLarge)
             .background(containerColor)
             .background(animatedStateLayerColor)
             .clickable(
@@ -773,7 +830,7 @@ private fun ThemeDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.large)
+                            .clip(MaterialTheme.shapes.extraLarge)
                             .selectable(
                                 selected = mode == currentMode,
                                 role = Role.RadioButton,
@@ -824,7 +881,7 @@ private fun SpeedUnitDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.large)
+                            .clip(MaterialTheme.shapes.extraLarge)
                             .selectable(
                                 selected = unit == currentUnit,
                                 role = Role.RadioButton,
@@ -876,7 +933,7 @@ private fun DataUnitDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.large)
+                            .clip(MaterialTheme.shapes.extraLarge)
                             .selectable(
                                 selected = unit == currentUnit,
                                 role = Role.RadioButton,

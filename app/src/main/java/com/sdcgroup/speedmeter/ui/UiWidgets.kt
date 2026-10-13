@@ -49,6 +49,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import kotlin.math.roundToInt
 
 private val SwitchTrackWidth = 52.dp
@@ -79,20 +80,20 @@ fun Switch(
         targetValue = if (isDragging) dragOffsetPx else (if (checked) maxOffsetPx else 0f),
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMedium
+            stiffness = Spring.StiffnessHigh
         ),
         label = "switchThumbOffset"
     )
 
     val trackColor by animateColorAsState(
         targetValue = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        animationSpec = spring(stiffness = Spring.StiffnessHigh),
         label = "switchTrackColor"
     )
 
     val thumbColor by animateColorAsState(
         targetValue = if (checked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.outline,
-        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        animationSpec = spring(stiffness = Spring.StiffnessHigh),
         label = "switchThumbColor"
     )
 
@@ -188,6 +189,8 @@ data class AppAlertDialogOption(
     val onSelect: () -> Unit
 )
 
+private val CenteredDialogProperties = DialogProperties(decorFitsSystemWindows = true)
+
 @Composable
 private fun ScrollableDialogContent(
     content: @Composable () -> Unit
@@ -217,6 +220,7 @@ fun AppAlertDialog(
     AlertDialog(
         modifier = Modifier.semantics { contentDescription = dialogLabel },
         onDismissRequest = onDismissRequest,
+        properties = CenteredDialogProperties,
         icon = {
             Icon(
                 imageVector = icon,
@@ -244,6 +248,7 @@ fun AppAlertDialog(
     AlertDialog(
         modifier = Modifier.semantics { contentDescription = dialogLabel },
         onDismissRequest = onDismissRequest,
+        properties = CenteredDialogProperties,
         icon = {
             Icon(
                 imageVector = icon,

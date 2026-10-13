@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            startServiceIfEnabledOnce()
+            startServiceIfEnabled()
         }
     }
 
@@ -56,18 +56,23 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                startServiceIfEnabledOnce()
+        lifecycleScope.launch {
+            val isEnabled = indicatorEnabledFlow(this@MainActivity).first()
+            if (!isEnabled) return@launch
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    startServiceIfEnabled()
+                } else {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
             } else {
-                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                startServiceIfEnabled()
             }
-        } else {
-            startServiceIfEnabledOnce()
         }
 
         setContent {
@@ -75,7 +80,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startServiceIfEnabledOnce() {
+    private fun startServiceIfEnabled() {
         lifecycleScope.launch {
             val isEnabled = indicatorEnabledFlow(this@MainActivity).first()
             if (isEnabled) {
