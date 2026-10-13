@@ -1,4 +1,4 @@
-package com.sdcgroup.speedmeter.ui.utils
+package com.sdcgroup.speedmeter.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember

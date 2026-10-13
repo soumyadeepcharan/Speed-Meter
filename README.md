@@ -20,29 +20,26 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 - **Runs in the background.** The indicator keeps working while you use other apps.
 - **Quiet notification.** It makes no sound and does not vibrate. It stays on your device only.
 
-**Home screen**
-- **Indicator section.** Shows an **Enable indicator** row. Tap the row or its switch to turn the status bar indicator on or off.
+**One scrolling page**
+- **Home section.** The **Indicator** section has an **Enable indicator** row. Tap the row or its switch to turn the status bar indicator on or off.
 - **Indicator is off by default.** Turn it on to see your speed. Your choice is saved and respected every time you open the app.
+- **More section.** Below Home, the **More** section has the options listed below. Scroll down to reach it.
 
-**More screen**
+**More section**
 - **Notification settings.** Opens your phone's notification settings for Speed Meter.
 - **Choose theme.** Pick **System default**, **Light mode** or **Dark mode**. Your choice is saved.
 - **Help & feedback.** Choose **Suggest a feature** or **Report a bug**. Either option opens your email app with a message ready to send to the developer. Bug reports include your app version, phone model and Android version.
 - **About.** Shows the app name, version and a short description.
 
-**Layout and navigation**
-- **Phones.** The screen shows one page at a time. Use the floating toolbar at the bottom to switch between **Home** and **More**. The toolbar hides as you scroll down and returns when you scroll up.
-- **Tablets, foldables and large screens.** Home and More appear side by side, and the bottom toolbar is hidden.
-- **Rotation and resizing.** The layout adjusts when you rotate your device or resize the window.
-- **Title bar.** The top of the screen shows "Speed Meter" and stays in place as you scroll.
-- **Keyboard-friendly.** The layout adjusts when the on-screen keyboard appears.
-
 **Look and feel**
+- **Title bar.** The top of the screen shows "Speed Meter" and stays in place as you scroll.
 - **Light, dark or system theme.** Follow your phone's setting, or choose light or dark mode in **More → Choose theme**.
 - **Wallpaper colours (Android 12 and newer).** On supported phones, the app picks its colours from your wallpaper.
-- **Standard colours on older phones.** Phones without wallpaper colours get a built-in blue colour scheme.
+- **Standard colours on older phones.** Phones without wallpaper colours get a built-in colour scheme.
 - **Full-screen display.** Content runs edge to edge behind the status bar and navigation bar.
 - **Matching system bars.** The status bar and navigation bar icons switch between light and dark to suit the theme.
+- **Rotation and resizing.** The layout adjusts when you rotate your device or resize the window.
+- **Keyboard-friendly.** The layout adjusts when the on-screen keyboard appears.
 - **Speedometer app icon.** The icon shows a coloured gauge with a needle.
 - **Themed icon (Android 13 and newer).** A single-colour icon matches your launcher's theme.
 - **Smoother launch.** The app opens without a blank preview screen.
@@ -68,7 +65,7 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 2. On your Android phone, go to **Settings → Install Unknown Apps** and allow installation from your browser or file manager.
 3. Open the downloaded APK and tap **Install**.
 4. Open **Speed Meter**. If asked, allow notifications.
-5. On the Home screen, turn on **Enable indicator** to see your speed in the status bar.
+5. On the Home section, turn on **Enable indicator** to see your speed in the status bar.
 
 ---
 

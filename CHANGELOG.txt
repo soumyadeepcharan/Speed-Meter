@@ -1,16 +1,17 @@
 Speed Meter - Changelog
 =======================
 
-[0.5.0] - Data Usage and Theme Choice (versionName 0.5.0, versionCode 6)
-------------------------------------------------------------------------
+[0.6.0] - Single-Page Layout and Code Reorganization (versionName 0.6.0, versionCode 7)
+---------------------------------------------------------------------------------------
 
 Tech Stack
 ----------
 - Language:             Kotlin 2.1.20
 - UI Toolkit:           Jetpack Compose with Material 3 1.5.0-alpha03
                         (pre-release)
-- Adaptive UI:          Material 3 Adaptive 1.0.0 (adaptive, adaptive-layout,
-                        adaptive-navigation)
+- Adaptive libraries:   Material 3 Adaptive 1.0.0 (adaptive, adaptive-layout,
+                        adaptive-navigation). Declared in the build but no
+                        longer used by the app code.
 - Compose BOM:          2026.02.01
 - Build System:         Gradle (Kotlin DSL), Android Gradle Plugin 8.11.0
 - Compose Compiler:     Kotlin Compose compiler plugin (2.1.20)
@@ -55,7 +56,7 @@ Build Configuration
   from release.properties when present. CI reads them from environment
   variables instead.
 - Lint checks on release builds are disabled (checkReleaseBuilds = false).
-- BuildConfig generation enabled (used for the version name in the More screen).
+- BuildConfig generation enabled (used for the version name in the More section).
 - AndroidX enabled; non-transitive R class enabled; Gradle configuration
   cache enabled.
 
@@ -74,6 +75,23 @@ Manifest
 - allowBackup = true, with backup_rules.xml and data_extraction_rules.xml.
 - Theme (values/ and values-night/): windowDisablePreview = true, transparent
   status and navigation bars.
+
+Source Layout
+-------------
+- com.sdcgroup.speedmeter
+  - MainActivity.kt: launch logic, theme state, and the top-level Scaffold.
+  - data/: SettingsDataStore.kt (DataStore keys, ThemeMode), Speed.kt
+    (formatSpeed, formatDataUsage).
+  - service/: SpeedMonitorService.kt.
+  - notification/: NotificationHelper.kt, IconGenerator.kt.
+  - ui/: Color.kt (palette and colour schemes), Theme.kt, Type.kt,
+    TopAppBar.kt, HomeScreen.kt (Home section, More section, and dialogs),
+    UiWidgets.kt (Switch, AppAlertDialog), WindowSizeClass.kt,
+    WindowSizeDefaults.kt.
+- The 0.5.0 subpackages ui/screens, ui/theme, and ui/utils are merged into ui/.
+- Removed in 0.6.0: BottomToolbar.kt, AdaptiveHomeMoreLayout.kt,
+  IndicatorEnableSetting.kt, MoreScreen.kt, and ColorScheme.kt (merged into
+  Color.kt).
 
 Features Implemented
 --------------------
@@ -95,17 +113,14 @@ Network Speed Monitoring (service/, data/, notification/)
   - formatDataUsage(): "N B" below 1 KiB, "N.N KB" below 1 MiB, "N.NN MiB"
     below 1 GiB, and "N.NN GiB" above that.
   - Speed holds down, up, and total as HumanSpeed(speedValue, speedUnit).
-- NotificationHelper: channel "netspeed_channel" (IMPORTANCE_LOW, no badge),
-  an ongoing, local-only, low-priority notification with a custom content view.
-  Notification ID 1001. buildNotification and notify take the speed and the two
-  data usage strings.
+- NotificationHelper: channel "netspeed_channel", named "Speed Meter" in system
+  settings (IMPORTANCE_LOW, no badge). It posts an ongoing, local-only,
+  low-priority notification with a custom content view. Notification ID 1001.
 - notification_layout.xml: an 18dp icon area with the total speed value and
   unit, and one details line: "Data", "WiFi", "Down", and "Up" with their values.
-  The settings icon is in the layout but hidden.
 - IconGenerator: draws the total speed and unit as a 72 x 96 white bitmap, used
   as the status bar small icon. Value text is 60sp, 48sp, or 38sp by digit
-  count. Unit text is 28sp, sans-serif-black bold. Value baseline is 58px and
-  unit baseline is 90px.
+  count. Unit text is 28sp, sans-serif-black bold.
 
 Settings (data/SettingsDataStore.kt)
 - DataStore Preferences named "settings".
@@ -120,73 +135,57 @@ Service Start Logic (MainActivity.kt)
 - MainActivity requests POST_NOTIFICATIONS on API 33+ if it is not granted.
 - startServiceIfEnabledOnce() reads indicatorEnabledFlow().first() in
   lifecycleScope and starts SpeedMonitorService (foreground service on API
-  26+) only when the saved value is true. It reads the value once, so the
-  service is not started again when the setting changes later.
+  26+) only when the saved value is true. It reads the value once.
 - The same check runs after the permission prompt is answered (if granted) and
   directly on API 26 to 32.
 
-Home Screen (ui/screens/HomeScreen.kt)
-- HomeScreen: a LazyColumn with an "Indicator" section.
-- The row shows a NetworkCheck icon, the title "Enable indicator", the subtitle
-  "Show NetSpeed indicator in the status bar", and a switch. Tapping the whole
-  row toggles the setting (Role.Switch).
-- The row is not drawn until the saved value has loaded, which avoids a flicker
-  of the wrong state on launch.
+Single Page (ui/HomeScreen.kt)
+- SpeedMeterHomeMoreContent: one Surface containing a LazyColumn with two items,
+  HomeScreen first and MoreScreen after it. Vertical spacing is 16dp.
+- The bottom floating toolbar and the two-pane list-detail layout were removed.
+  Home and More are reached by scrolling.
+
+Home Section (ui/HomeScreen.kt, HomeScreen)
+- An "Indicator" section with a single row: NetworkCheck icon, the title
+  "Enable indicator", the subtitle "Show network speed in the status bar", and a
+  switch. Tapping the whole row toggles the setting (Role.Switch).
+- The row is not drawn until the saved value has loaded.
 - Turning it on starts SpeedMonitorService. Turning it off stops it.
 
-More Screen (ui/screens/MoreScreen.kt)
-- MoreScreen: a LazyColumn with four sections.
+More Section (ui/HomeScreen.kt, MoreScreen)
+- A LazyColumn-based section with four parts.
   - General: "Notification settings" opens Settings.ACTION_APP_NOTIFICATION_SETTINGS
     for this package.
   - Appearance: "Choose theme" opens ThemeDialog. The row subtitle shows the
     current choice: "System default", "Light mode", or "Dark mode". The dialog
-    uses radio buttons inside selectableGroup, and selecting one saves it with
-    setThemeMode.
+    uses radio buttons, and selecting one saves it with setThemeMode.
   - Support: "Help & feedback" (HelpFeedbackDialog) and "About" (AboutDialog).
   - Footer: "Made with ❤️ from India by SDC Group".
 - HelpFeedbackDialog: "Suggest a feature" and "Report a bug" each open an
   ACTION_SENDTO intent addressed to sdcgroupofficial@gmail.com with a prefilled
-  subject and body from strings.xml. The bug report template includes the app
-  version, device model (Build.MODEL), device name (Build.DEVICE), and Android
-  version and API level.
-- AppAlertDialog (ui/screens/UiWidgets.kt): shared Material 3 AlertDialog
-  wrapper with two variants, one confirm button and one dismiss button, and a
-  content description.
-- Dialogs request focus when they open and have screen reader labels.
+  subject and body from strings.xml. The dialog title is "How can you help?".
+  The bug report template includes the app version, device model
+  (Build.MODEL), device name (Build.DEVICE), and Android version and API level.
+- AppAlertDialog (ui/UiWidgets.kt): shared Material 3 AlertDialog wrapper with a
+  confirm-button variant and a dismiss-button variant, and a content description.
 
-Theming (ui/theme)
-- ColorScheme.kt: LightColorScheme and DarkColorScheme built from md_theme_*
-  tokens in Color.kt. Used when dynamic colour is off or the device is below
-  API 31.
-- Color.kt: Material 3 baseline palette tokens.
+Theming (ui/)
+- Color.kt: Material 3 baseline palette tokens (md_theme_*), plus
+  LightColorScheme and DarkColorScheme. These are the fallback schemes used when
+  dynamic colour is off or the device is below API 31.
 - Theme.kt: MyComposeApplicationTheme(themeMode, dynamicColor = true).
   - darkTheme is resolved from ThemeMode: SYSTEM uses isSystemInDarkTheme(),
     LIGHT uses false, DARK uses true.
   - Dynamic colour (Material You) on API 31+ when dynamicColor is true.
   - System bar icon appearance follows the resolved theme through WindowCompat's
     insets controller.
-- MainActivity collects themeModeFlow (initial value SYSTEM) and passes it to the
-  theme.
+- Type.kt: base Typography with a bodyLarge style.
 
-Top Bar and Bottom Toolbar (ui/screens)
-- TopAppBar.kt: SpeedMeterTopAppBar, a Material 3 TopAppBar titled from
-  strings.xml with pinned scroll behaviour. The theme switch was removed from
-  the top bar.
-- BottomToolbar.kt: SpeedMeterBottomToolbar, a HorizontalFloatingToolbar with
-  Home and More items. Labels come from strings.xml, the items use a bounded
-  ripple and Role.Tab, and labels hide on ExtraCompact windows (under 300dp
-  wide).
+Top Bar (ui/TopAppBar.kt)
+- SpeedMeterTopAppBar: a Material 3 TopAppBar titled from strings.xml with pinned
+  scroll behaviour.
 
-Layout (ui/screens/AdaptiveHomeMoreLayout.kt)
-- SpeedMeterHomeMoreContent: a ListDetailPaneScaffold with HomeScreen as the
-  list pane and MoreScreen as the detail pane.
-- Compact and ExtraCompact width classes use one pane. The floating bottom
-  toolbar switches panes: Home navigates to the List role and More navigates
-  to the Detail role.
-- Medium width and wider use two panes side by side. The bottom toolbar is not
-  shown.
-
-Layout Utilities (ui/utils)
+Layout Utilities (ui/)
 - WindowSizeClass.kt: width classes (ExtraCompact < 300dp, Compact < 600dp,
   Medium < 840dp, Expanded < 1200dp, Large < 1600dp, ExtraLarge otherwise)
   and height classes (Compact < 480dp, Medium < 900dp, Expanded otherwise),
@@ -202,14 +201,30 @@ Adaptive App Icon
 - Monochrome: drawable/ic_launcher_monochrome.xml for Android 13+ themed icons.
 - Source: assets/ic_launcher.svg.
 
-Changes Since 0.4.1
+Changes Since 0.5.0
 -------------------
+- Removed the floating bottom toolbar (Home and More buttons) and its
+  exit-always scroll behaviour.
+- Removed the two-pane adaptive Home and More layout. Tablets and foldables now
+  show the same single page as phones.
+- Home and More are now stacked on one scrolling page.
+- Moved the source files from ui/screens, ui/theme, and ui/utils into ui/.
+- Merged ColorScheme.kt into Color.kt.
+- Replaced the NetSpeed wording in user-facing text with "network speed".
+- Renamed the notification channel's display name from "NetSpeed Indicator" to
+  "Speed Meter".
+- Changed the help dialog title to "How can you help?"
+- Removed the unused "Home" and "More" navigation strings.
+- Version bumped to 0.6.0 (versionCode 7).
+
+[0.5.0] - Data Usage and Theme Choice (versionName 0.5.0, versionCode 6)
+------------------------------------------------------------------------
+
 - Added session data usage (mobile and Wi-Fi) to the status bar notification.
 - Added the Wi-Fi estimate, calculated as total minus mobile TrafficStats.
 - Added the Choose theme setting with System default, Light, and Dark options,
   saved with DataStore. It replaces the dark theme switch on the More screen.
-- Removed the theme switch from the top bar and the More screen's Appearance
-  switch.
+- Removed the theme switch from the top bar.
 - Replaced IndicatorEnableSetting with HomeScreen. The whole row now toggles
   the indicator.
 - Changed the status bar icon to 72 x 96 with larger value text and a black
@@ -220,7 +235,6 @@ Changes Since 0.4.1
 - The speed service reads the saved setting once on launch, and does not
   restart when the setting changes.
 - Added a Made with ❤️ from India by SDC Group footer on the More screen.
-- Version bumped to 0.5.0 (versionCode 6).
 
 [0.4.1] - Indicator Fix and Default Change (versionName 0.4.1, versionCode 5)
 -----------------------------------------------------------------------------
@@ -243,8 +257,7 @@ Changes Since 0.4.1
 - Added the About dialog.
 - Added the adaptive list-detail layout: one pane on phones, two panes on
   tablets and foldables.
-- The bottom toolbar's Home and More buttons now switch between screens on
-  phones.
+- The bottom toolbar's Home and More buttons switched between screens on phones.
 - Added the Material 3 Adaptive libraries (1.0.0) and Material Icons Extended.
 - Added the ExperimentalMaterial3AdaptiveApi opt-in.
 - Added windowDisablePreview to the app themes.
@@ -306,11 +319,10 @@ Known Limitations
   non-mobile interfaces such as Ethernet or VPN traffic.
 - On devices where TrafficStats mobile counters are unsupported, the Wi-Fi
   estimate equals total traffic.
-- Material 3 1.5.0-alpha03 and Material 3 Adaptive 1.0.0 are used. The
-  Material 3 alpha may show visual quirks.
+- Material 3 1.5.0-alpha03 is a pre-release and may show visual quirks.
+- The Material 3 Adaptive libraries are still declared but not used.
+- No bottom navigation. Home and More share one scrolling page.
 - No speed history, speedometer gauge, or units setting.
 - No About screen beyond the dialog. No separate settings screen.
 - No unit or instrumented tests.
-- Home screen content is not scrollable yet.
 - No animated launcher icon (the animated drawable is not in this build).
-- The bottom toolbar's selected state is not yet shown on the active page.

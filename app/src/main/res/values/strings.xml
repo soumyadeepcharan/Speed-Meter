@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Speed Meter</string>
-    <string name="netspeed_channel_name">NetSpeed Indicator</string>
+    <string name="netspeed_channel_name">Speed Meter</string>
     <string name="netspeed_channel_description">Shows current network speed</string>
     <string name="download_label">Down</string>
     <string name="upload_label">Up</string>
@@ -10,12 +10,12 @@
 
     <string name="home_section_indicator">Indicator</string>
     <string name="home_indicator_title">Enable indicator</string>
-    <string name="home_indicator_subtitle">Show NetSpeed indicator in the status bar</string>
-    <string name="home_indicator_toggle_description">Toggle NetSpeed status bar indicator</string>
+    <string name="home_indicator_subtitle">Show network speed in the status bar</string>
+    <string name="home_indicator_toggle_description">Toggle network speed in the status bar</string>
 
     <string name="more_section_general">General</string>
     <string name="more_notification_title">Notification settings</string>
-    <string name="more_notification_subtitle">Manage NetSpeed indicator notifications</string>
+    <string name="more_notification_subtitle">Manage network speed indicator notifications</string>
 
     <string name="more_section_appearance">Appearance</string>
     <string name="more_theme_title">Choose theme</string>
@@ -31,11 +31,8 @@
     <string name="more_about_subtitle">v%1$s</string>
     <string name="more_made_with_love">Made with ❤️ from India by SDC Group</string>
 
-    <string name="home_nav_label">Home</string>
-    <string name="more_nav_label">More</string>
-
     <string name="help_dialog_label">Help and feedback</string>
-    <string name="help_dialog_title">How can we help?</string>
+    <string name="help_dialog_title">How can you help?</string>
     <string name="help_suggest_feature">Suggest a feature</string>
     <string name="help_report_bug">Report a bug</string>
     <string name="dialog_cancel">Cancel</string>

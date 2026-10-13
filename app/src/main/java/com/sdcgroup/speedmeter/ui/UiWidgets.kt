@@ -1,6 +1,5 @@
-package com.sdcgroup.speedmeter.ui.screens
+package com.sdcgroup.speedmeter.ui
 
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -11,7 +10,6 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -29,7 +27,6 @@ fun Switch(
     contentDescription: String = "Toggle switch"
 ) {
     val hapticFeedback = LocalHapticFeedback.current
-    val interactionSource = remember { MutableInteractionSource() }
 
     Material3Switch(
         modifier = modifier.semantics { this.contentDescription = contentDescription },
@@ -39,7 +36,6 @@ fun Switch(
             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
         },
         enabled = enabled,
-        interactionSource = interactionSource,
         thumbContent = {
             if (checked) {
                 Icon(

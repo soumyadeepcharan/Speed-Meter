@@ -1,47 +1,43 @@
-# Speed Meter v0.5.0: Data Usage and Theme Choice
+# Speed Meter v0.6.0: Simpler Single-Page Layout
 
-**Speed Meter v0.5.0** shows how much mobile and Wi-Fi data you use right in your status bar notification. You can also now choose light, dark, or system theme from the More screen.
+**Speed Meter v0.6.0** simplifies the app. Home and More now sit on one scrolling page, and the floating bottom toolbar is gone. The speed indicator, data usage, and theme choice work as before.
 
 ---
 
 ## What's New
 
-### 📊 Data Usage in the Notification
-- **Mobile data and Wi-Fi data.** The status bar notification shows how much **mobile data** and **Wi-Fi data** you have used since the indicator started.
-- **Readable sizes.** Amounts show as B, KB, MiB, or GiB, depending on size.
-- **Wi-Fi is an estimate.** The Wi-Fi figure is calculated from your phone's total traffic minus mobile traffic.
-- **Resets when the indicator restarts.** Totals start again after a reboot, a force stop, or turning the indicator off and on. Daily totals are coming in a future release.
+### 📜 One Scrolling Page
+- **Home and More on one page.** The **Indicator** section is at the top, and the **More** section is below it. Scroll down to reach More.
+- **Same layout on every screen.** Tablets and foldables now show the same single page as phones.
+- **Simpler navigation.** The floating Home and More toolbar has been removed.
 
-### 🎨 Choose Your Theme
-- Open **More → Choose theme** and pick **System default**, **Light mode**, or **Dark mode**.
-- Your choice is saved and applied the next time you open the app.
-- This replaces the dark theme switch on the More screen.
-
-### 🏠 Simpler Home Screen
-- The **Indicator** section now shows one **Enable indicator** row. Tap anywhere on the row to turn the indicator on or off.
-
-### 🖼️ Refreshed Status Bar Icon and Notification
-- The status bar icon is taller, with larger speed numbers and a bolder unit label.
-- The notification layout has a compact speed icon and one details line: **Data**, **WiFi**, **Down**, and **Up**.
+### 🏷️ Clearer Wording
+- The app now says **network speed** instead of "NetSpeed" in its text.
+- The status bar notification channel is named **Speed Meter** in your system notification settings.
+- The help dialog title reads **How can you help?**
 
 ---
 
 ## Under the Hood
-- The speed service reads your indicator setting once on launch. It no longer restarts when you change the setting while the app is open.
-- All text in the app, including the feedback email templates, now lives in one place for easier translation.
-- Version bumped to **0.5.0**.
+- Reorganized the source code into fewer, clearer files.
+- The bottom toolbar and the two-pane layout were removed.
+- Version bumped to **0.6.0**.
 
 ---
 
-## Compatibility
-- Requires **Android 8.0 (Oreo) or newer**.
-- Release builds are signed with **v1, v2, v3 and v4** signature schemes.
+## Requirements
+- Android **8.0 (Oreo)** or higher
+- Works on phones, tablets and foldables
 
 ---
 
-## Known Notes
-- Data totals reset when the indicator restarts. They are not saved from day to day yet.
-- The Wi-Fi figure is an estimate, and may include some traffic from other non-mobile networks.
-- This release still uses a pre-release (alpha) version of Material 3, so minor visual quirks may appear.
+## Installation
 
-Thanks for using **Speed Meter**! 🚀
+1. Download the APK below for your device.
+2. On your Android phone, go to **Settings → Install Unknown Apps** and allow installation from your browser or file manager.
+3. Open the downloaded APK and tap **Install**.
+4. Open **Speed Meter**, then turn on **Enable indicator** in the Indicator section.
+
+---
+
+**Full Changelog**: See `CHANGELOG.txt` for the tech stack and full technical details.

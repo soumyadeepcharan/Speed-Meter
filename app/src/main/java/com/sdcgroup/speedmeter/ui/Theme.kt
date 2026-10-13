@@ -1,4 +1,4 @@
-package com.sdcgroup.speedmeter.ui.theme
+package com.sdcgroup.speedmeter.ui
 
 import android.app.Activity
 import android.os.Build

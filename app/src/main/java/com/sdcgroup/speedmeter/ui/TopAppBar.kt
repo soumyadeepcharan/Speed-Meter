@@ -1,4 +1,4 @@
-package com.sdcgroup.speedmeter.ui.screens
+package com.sdcgroup.speedmeter.ui
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text

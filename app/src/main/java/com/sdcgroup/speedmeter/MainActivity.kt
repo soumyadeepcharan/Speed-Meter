@@ -12,9 +12,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingToolbarDefaults
-import androidx.compose.material3.FloatingToolbarExitDirection.Companion.Bottom
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -31,9 +28,9 @@ import com.sdcgroup.speedmeter.data.ThemeMode
 import com.sdcgroup.speedmeter.data.indicatorEnabledFlow
 import com.sdcgroup.speedmeter.data.themeModeFlow
 import com.sdcgroup.speedmeter.service.SpeedMonitorService
-import com.sdcgroup.speedmeter.ui.screens.SpeedMeterHomeMoreContent
-import com.sdcgroup.speedmeter.ui.screens.SpeedMeterTopAppBar
-import com.sdcgroup.speedmeter.ui.theme.MyComposeApplicationTheme
+import com.sdcgroup.speedmeter.ui.MyComposeApplicationTheme
+import com.sdcgroup.speedmeter.ui.SpeedMeterHomeMoreContent
+import com.sdcgroup.speedmeter.ui.SpeedMeterTopAppBar
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -85,12 +82,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SpeedMeterApp() {
     val context = LocalContext.current
     val topAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val bottomToolbarScrollBehavior = FloatingToolbarDefaults.exitAlwaysScrollBehavior(exitDirection = Bottom)
 
     val themeModeFlow = remember { themeModeFlow(context) }
     val themeMode by themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
@@ -99,8 +95,7 @@ fun SpeedMeterApp() {
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
-                .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
-                .nestedScroll(bottomToolbarScrollBehavior),
+                .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
             topBar = {
                 SpeedMeterTopAppBar(
                     title = stringResource(id = R.string.app_name),
@@ -109,7 +104,6 @@ fun SpeedMeterApp() {
             }
         ) { innerPadding ->
             SpeedMeterHomeMoreContent(
-                bottomToolbarScrollBehavior = bottomToolbarScrollBehavior,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
