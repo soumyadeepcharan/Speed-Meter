@@ -44,6 +44,7 @@ class NotificationHelper(private val context: Context) {
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(IconCompat.createWithBitmap(iconBitmap))
             .setCustomContentView(createRemoteViews(speed, totalDataUsage, wifiDataUsage))
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setOngoing(true)
             .setLocalOnly(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -65,14 +66,12 @@ class NotificationHelper(private val context: Context) {
         wifiDataUsage: String
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.notification_layout)
-        views.setTextViewText(R.id.notificationSpeedValue, speed.total.speedValue)
-        views.setTextViewText(R.id.notificationSpeedUnit, speed.total.speedUnit)
         views.setTextViewText(
             R.id.notificationText,
-            "${context.getString(R.string.data_label)}: $totalDataUsage  " +
-                "${context.getString(R.string.wifi_label)}: $wifiDataUsage  " +
-                "${context.getString(R.string.download_label)}: ${speed.down.speedValue} ${speed.down.speedUnit}  " +
-                "${context.getString(R.string.upload_label)}: ${speed.up.speedValue} ${speed.up.speedUnit}"
+            "${context.getString(R.string.download_label)}: ${speed.down.speedValue} ${speed.down.speedUnit}  " +
+                "${context.getString(R.string.upload_label)}: ${speed.up.speedValue} ${speed.up.speedUnit}  " +
+                "${context.getString(R.string.data_label)}: $totalDataUsage  " +
+                "${context.getString(R.string.wifi_label)}: $wifiDataUsage"
         )
         return views
     }

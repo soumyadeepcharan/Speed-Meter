@@ -19,36 +19,72 @@ data class Speed(
     }
 }
 
-fun formatSpeed(bytesPerSecond: Long): HumanSpeed {
+private fun scaledMagnitude(value: Double, base: Double, units: List<String>): Pair<String, String> {
+    var scaledValue = value
+    var unitIndex = 0
+
+    while (scaledValue >= base && unitIndex < units.size - 1) {
+        scaledValue /= base
+        unitIndex++
+    }
+
+    val decimals = if (unitIndex == 0) 0 else 1
+    var formatted = String.format("%.${decimals}f", scaledValue)
+
+    if (formatted.toDouble() >= base && unitIndex < units.size - 1) {
+        unitIndex++
+        scaledValue /= base
+        val nextDecimals = if (unitIndex == 0) 0 else 1
+        formatted = String.format("%.${nextDecimals}f", scaledValue)
+    }
+
+    return formatted to units[unitIndex]
+}
+
+fun formatSpeed(bytesPerSecond: Long, unit: SpeedUnit = SpeedUnit.BYTES_PER_SECOND): HumanSpeed {
     val safeBytes = if (bytesPerSecond < 0) 0L else bytesPerSecond
-    val kbPerSecond = safeBytes / 1024.0
-    return if (kbPerSecond < 1024.0) {
-        HumanSpeed(
-            speedValue = String.format("%.0f", kbPerSecond),
-            speedUnit = "KB/s"
-        )
-    } else {
-        val mbPerSecond = kbPerSecond / 1024.0
-        HumanSpeed(
-            speedValue = String.format("%.1f", mbPerSecond),
-            speedUnit = "MB/s"
-        )
+
+    return when (unit) {
+        SpeedUnit.BYTES_PER_SECOND -> {
+            val (value, label) = scaledMagnitude(
+                value = safeBytes.toDouble(),
+                base = 1024.0,
+                units = listOf("B/s", "KB/s", "MB/s", "GB/s")
+            )
+            HumanSpeed(speedValue = value, speedUnit = label)
+        }
+        SpeedUnit.BITS_PER_SECOND -> {
+            val bitsPerSecond = safeBytes * 8.0
+            val (value, label) = scaledMagnitude(
+                value = bitsPerSecond,
+                base = 1000.0,
+                units = listOf("b/s", "Kb/s", "Mb/s", "Gb/s")
+            )
+            HumanSpeed(speedValue = value, speedUnit = label)
+        }
     }
 }
 
-fun formatDataUsage(bytes: Long): String {
+fun formatDataUsage(bytes: Long, unit: DataUnit = DataUnit.BYTES_BINARY): String {
     val safeBytes = if (bytes < 0) 0L else bytes
-    if (safeBytes < 1024L) {
-        return String.format("%d B", safeBytes)
+
+    val (value, label) = when (unit) {
+        DataUnit.BITS_DECIMAL -> scaledMagnitude(
+            value = safeBytes * 8.0,
+            base = 1000.0,
+            units = listOf("b", "Kb", "Mb", "Gb", "Tb")
+        )
+        DataUnit.BYTES_DECIMAL -> scaledMagnitude(
+            value = safeBytes.toDouble(),
+            base = 1000.0,
+            units = listOf("B", "kB", "MB", "GB", "TB")
+        )
+        DataUnit.BYTES_BINARY -> scaledMagnitude(
+            value = safeBytes.toDouble(),
+            base = 1024.0,
+            units = listOf("B", "KiB", "MiB", "GiB", "TiB")
+        )
     }
-    val kb = safeBytes / 1024.0
-    if (kb < 1024.0) {
-        return String.format("%.1f KB", kb)
-    }
-    val mb = kb / 1024.0
-    if (mb < 1024.0) {
-        return String.format("%.2f MiB", mb)
-    }
-    val gb = mb / 1024.0
-    return String.format("%.2f GiB", gb)
+
+    return "$value $label"
 }

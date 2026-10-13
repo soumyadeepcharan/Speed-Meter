@@ -11,12 +11,13 @@ import com.sdcgroup.speedmeter.data.HumanSpeed
 class IconGenerator {
 
     private val width = 72
-    private val height = 96
+    private val height = 72
 
     private val valuePaint = Paint().apply {
         color = Color.WHITE
         textAlign = Paint.Align.CENTER
         typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD)
+        textScaleX = 0.85f
         isAntiAlias = true
     }
 
@@ -24,6 +25,7 @@ class IconGenerator {
         color = Color.WHITE
         textAlign = Paint.Align.CENTER
         typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
+        textScaleX = 0.9f
         isAntiAlias = true
     }
 
@@ -33,16 +35,22 @@ class IconGenerator {
     fun generateIcon(speed: HumanSpeed): Bitmap {
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
 
-        val digitCount = speed.speedValue.length
-        valuePaint.textSize = when {
-            digitCount <= 2 -> 60f
-            digitCount == 3 -> 48f
-            else -> 38f
-        }
-        unitPaint.textSize = 28f
+        valuePaint.textSize = 48f
+        unitPaint.textSize = 24f
 
-        canvas.drawText(speed.speedValue, width / 2f, 58f, valuePaint)
-        canvas.drawText(speed.speedUnit, width / 2f, 90f, unitPaint)
+        val valueMetrics = valuePaint.fontMetrics
+        val unitMetrics = unitPaint.fontMetrics
+
+        val valueHeight = valueMetrics.descent - valueMetrics.ascent
+        val unitHeight = unitMetrics.descent - unitMetrics.ascent
+        val totalHeight = valueHeight + unitHeight
+
+        val startY = (height - totalHeight) / 2f
+        val valueBaseline = startY - valueMetrics.ascent
+        val unitBaseline = startY + valueHeight - unitMetrics.ascent
+
+        canvas.drawText(speed.speedValue, width / 2f, valueBaseline, valuePaint)
+        canvas.drawText(speed.speedUnit, width / 2f, unitBaseline, unitPaint)
 
         return bitmap
     }

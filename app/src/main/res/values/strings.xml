@@ -8,16 +8,27 @@
     <string name="data_label">Data</string>
     <string name="wifi_label">WiFi</string>
 
-    <string name="home_section_indicator">Indicator</string>
     <string name="home_indicator_title">Enable indicator</string>
     <string name="home_indicator_subtitle">Show network speed in the status bar</string>
     <string name="home_indicator_toggle_description">Toggle network speed in the status bar</string>
 
-    <string name="more_section_general">General</string>
+    <string name="more_section_notification">Notification settings</string>
     <string name="more_notification_title">Notification settings</string>
     <string name="more_notification_subtitle">Manage network speed indicator notifications</string>
+    <string name="more_speed_unit_title">Speed units</string>
+    <string name="more_speed_unit_subtitle_bytes">Bytes per second</string>
+    <string name="more_speed_unit_subtitle_bits">Bits per second</string>
+    <string name="more_data_unit_title">Data usage units</string>
+    <string name="more_data_unit_subtitle_bits_decimal">Bits, 1 Mb = 1000 Kb</string>
+    <string name="more_data_unit_subtitle_bytes_decimal">Bytes, 1 MB = 1000 kB</string>
+    <string name="more_data_unit_subtitle_bytes_binary">Bytes, 1 MiB = 1024 KiB</string>
 
-    <string name="more_section_appearance">Appearance</string>
+    <string name="more_section_notification_layout">Notification layout</string>
+    <string name="usage_access_title">Usage access</string>
+    <string name="usage_access_subtitle_not_granted">Required for accurate daily Data/WiFi totals — tap to grant</string>
+    <string name="usage_access_subtitle_granted">Granted — daily Data/WiFi totals are accurate</string>
+
+    <string name="more_section_general">General</string>
     <string name="more_theme_title">Choose theme</string>
     <string name="more_theme_subtitle_system">System default</string>
     <string name="more_theme_subtitle_light">Light mode</string>
@@ -43,6 +54,8 @@
     <string name="about_description">A lightweight data transfer speed monitor for Android.</string>
 
     <string name="theme_dialog_label">Choose theme</string>
+    <string name="speed_unit_dialog_label">Choose speed unit</string>
+    <string name="data_unit_dialog_label">Choose data usage unit</string>
 
     <string name="notif_settings_button">Notification settings</string>
 

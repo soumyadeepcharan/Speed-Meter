@@ -1,10 +1,13 @@
 package com.sdcgroup.speedmeter.ui
 
+import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Process
 import android.provider.Settings
+import android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,8 +26,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
@@ -33,11 +35,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Help
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.NetworkCheck
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,12 +51,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,11 +73,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.sdcgroup.speedmeter.BuildConfig
 import com.sdcgroup.speedmeter.R
+import com.sdcgroup.speedmeter.data.DataUnit
+import com.sdcgroup.speedmeter.data.SpeedUnit
 import com.sdcgroup.speedmeter.data.ThemeMode
 import com.sdcgroup.speedmeter.data.indicatorEnabledFlow
 import com.sdcgroup.speedmeter.data.setIndicatorEnabled
-import com.sdcgroup.speedmeter.data.setThemeMode
-import com.sdcgroup.speedmeter.data.themeModeFlow
 import com.sdcgroup.speedmeter.service.SpeedMonitorService
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -85,12 +92,31 @@ private fun stopIndicatorService(context: Context) {
     context.stopService(intent)
 }
 
+private fun isUsageAccessGranted(context: Context): Boolean {
+    val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+    val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        appOps.unsafeCheckOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            Process.myUid(),
+            context.packageName
+        )
+    } else {
+        @Suppress("DEPRECATION")
+        appOps.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            Process.myUid(),
+            context.packageName
+        )
+    }
+    return mode == AppOpsManager.MODE_ALLOWED
+}
+
 private const val ActionHoverStateLayerOpacity = 0.08f
 private const val ActionFocusStateLayerOpacity = 0.10f
 private const val ActionPressedStateLayerOpacity = 0.10f
 
 private enum class MoreAction {
-    NOTIFICATIONS, THEME, HELP, ABOUT
+    NOTIFICATIONS, SPEED_UNIT, DATA_UNIT, USAGE_ACCESS, THEME, HELP, ABOUT
 }
 
 private data class MoreItemSpec(
@@ -102,19 +128,34 @@ private data class MoreItemSpec(
 
 @Composable
 fun SpeedMeterHomeMoreContent(
+    themeMode: ThemeMode,
+    onThemeModeSelected: (ThemeMode, () -> Unit) -> Unit,
+    speedUnit: SpeedUnit,
+    onSpeedUnitSelected: (SpeedUnit, () -> Unit) -> Unit,
+    dataUnit: DataUnit,
+    onDataUnitSelected: (DataUnit, () -> Unit) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item(key = "home_indicator") { HomeScreen() }
-            item(key = "more_screen") { MoreScreen() }
+            HomeScreen()
+            MoreScreen(
+                themeMode = themeMode,
+                onThemeModeSelected = onThemeModeSelected,
+                speedUnit = speedUnit,
+                onSpeedUnitSelected = onSpeedUnitSelected,
+                dataUnit = dataUnit,
+                onDataUnitSelected = onDataUnitSelected,
+            )
         }
     }
 }
@@ -130,104 +171,112 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     }
     val enabled by enabledFlow.collectAsState(initial = initialEnabled ?: false)
 
-    val sectionTitle = stringResource(id = R.string.home_section_indicator)
     val itemTitle = stringResource(id = R.string.home_indicator_title)
     val itemSubtitle = stringResource(id = R.string.home_indicator_subtitle)
     val toggleDescription = stringResource(id = R.string.home_indicator_toggle_description)
 
     fun toggle(newValue: Boolean) {
-        if (newValue) {
-            startIndicatorService(context)
-        } else {
-            stopIndicatorService(context)
-        }
         scope.launch {
+            if (newValue) {
+                startIndicatorService(context)
+            } else {
+                stopIndicatorService(context)
+            }
             setIndicatorEnabled(context, newValue)
         }
     }
 
-    Column(
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
-        Text(
-            text = sectionTitle,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
-        )
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainer,
+        val interactionSource = remember { MutableInteractionSource() }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = ripple(bounded = true),
+                    role = Role.Switch,
+                    onClickLabel = itemTitle,
+                    onClick = { toggle(!enabled) },
+                )
+                .semantics(mergeDescendants = true) { contentDescription = "$itemTitle, $itemSubtitle" }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            val interactionSource = remember { MutableInteractionSource() }
-            Row(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = ripple(bounded = true),
-                        role = Role.Switch,
-                        onClickLabel = itemTitle,
-                        onClick = { toggle(!enabled) },
-                    )
-                    .semantics(mergeDescendants = true) { contentDescription = "$itemTitle, $itemSubtitle" }
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.NetworkCheck,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = itemTitle,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = itemSubtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Switch(
-                    checked = enabled,
-                    onCheckedChange = { newValue -> toggle(newValue) },
-                    contentDescription = toggleDescription
+                Icon(
+                    imageVector = Icons.Rounded.NetworkCheck,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(20.dp),
                 )
             }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = itemTitle,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = itemSubtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Switch(
+                checked = enabled,
+                onCheckedChange = { newValue -> toggle(newValue) },
+                contentDescription = toggleDescription
+            )
         }
     }
 }
 
 @Composable
 fun MoreScreen(
+    themeMode: ThemeMode,
+    onThemeModeSelected: (ThemeMode, () -> Unit) -> Unit,
+    speedUnit: SpeedUnit,
+    onSpeedUnitSelected: (SpeedUnit, () -> Unit) -> Unit,
+    dataUnit: DataUnit,
+    onDataUnitSelected: (DataUnit, () -> Unit) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var showHelpDialog by remember { mutableStateOf(false) }
-    var showAboutDialog by remember { mutableStateOf(false) }
-    var showThemeDialog by remember { mutableStateOf(false) }
+    var showHelpDialog by rememberSaveable { mutableStateOf(false) }
+    var showAboutDialog by rememberSaveable { mutableStateOf(false) }
+    var showThemeDialog by rememberSaveable { mutableStateOf(false) }
+    var showSpeedUnitDialog by rememberSaveable { mutableStateOf(false) }
+    var showDataUnitDialog by rememberSaveable { mutableStateOf(false) }
+    var isUsageAccessGranted by remember { mutableStateOf(isUsageAccessGranted(context)) }
 
-    val themeModeFlow = remember { themeModeFlow(context) }
-    val themeMode by themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
+    LaunchedEffect(Unit) {
+        isUsageAccessGranted = isUsageAccessGranted(context)
+    }
 
     val notificationTitle = stringResource(id = R.string.more_notification_title)
     val notificationSubtitle = stringResource(id = R.string.more_notification_subtitle)
+    val speedUnitTitle = stringResource(id = R.string.more_speed_unit_title)
+    val speedUnitSubtitleBytes = stringResource(id = R.string.more_speed_unit_subtitle_bytes)
+    val speedUnitSubtitleBits = stringResource(id = R.string.more_speed_unit_subtitle_bits)
+    val dataUnitTitle = stringResource(id = R.string.more_data_unit_title)
+    val dataUnitSubtitleBitsDecimal = stringResource(id = R.string.more_data_unit_subtitle_bits_decimal)
+    val dataUnitSubtitleBytesDecimal = stringResource(id = R.string.more_data_unit_subtitle_bytes_decimal)
+    val dataUnitSubtitleBytesBinary = stringResource(id = R.string.more_data_unit_subtitle_bytes_binary)
+    val usageAccessTitle = stringResource(id = R.string.usage_access_title)
+    val usageAccessSubtitleGranted = stringResource(id = R.string.usage_access_subtitle_granted)
+    val usageAccessSubtitleNotGranted = stringResource(id = R.string.usage_access_subtitle_not_granted)
     val themeTitle = stringResource(id = R.string.more_theme_title)
     val themeSubtitleSystem = stringResource(id = R.string.more_theme_subtitle_system)
     val themeSubtitleLight = stringResource(id = R.string.more_theme_subtitle_light)
@@ -237,24 +286,60 @@ fun MoreScreen(
     val aboutTitle = stringResource(id = R.string.more_about_title)
     val aboutSubtitle = stringResource(id = R.string.more_about_subtitle, BuildConfig.VERSION_NAME)
 
+    val speedUnitSubtitle = when (speedUnit) {
+        SpeedUnit.BYTES_PER_SECOND -> speedUnitSubtitleBytes
+        SpeedUnit.BITS_PER_SECOND -> speedUnitSubtitleBits
+    }
+
+    val dataUnitSubtitle = when (dataUnit) {
+        DataUnit.BITS_DECIMAL -> dataUnitSubtitleBitsDecimal
+        DataUnit.BYTES_DECIMAL -> dataUnitSubtitleBytesDecimal
+        DataUnit.BYTES_BINARY -> dataUnitSubtitleBytesBinary
+    }
+
+    val usageAccessSubtitle = if (isUsageAccessGranted) usageAccessSubtitleGranted else usageAccessSubtitleNotGranted
+
     val themeSubtitle = when (themeMode) {
         ThemeMode.SYSTEM -> themeSubtitleSystem
         ThemeMode.LIGHT -> themeSubtitleLight
         ThemeMode.DARK -> themeSubtitleDark
     }
 
-    val generalItems = remember {
+    val notificationSettingsItems = remember(speedUnitSubtitle, dataUnitSubtitle) {
         listOf(
             MoreItemSpec(
                 icon = Icons.Rounded.Notifications,
                 title = notificationTitle,
                 subtitle = notificationSubtitle,
                 action = MoreAction.NOTIFICATIONS,
+            ),
+            MoreItemSpec(
+                icon = Icons.Rounded.Speed,
+                title = speedUnitTitle,
+                subtitle = speedUnitSubtitle,
+                action = MoreAction.SPEED_UNIT,
+            ),
+            MoreItemSpec(
+                icon = Icons.Rounded.DataUsage,
+                title = dataUnitTitle,
+                subtitle = dataUnitSubtitle,
+                action = MoreAction.DATA_UNIT,
+            ),
+        )
+    }
+
+    val notificationLayoutItems = remember(usageAccessSubtitle) {
+        listOf(
+            MoreItemSpec(
+                icon = Icons.Rounded.Verified,
+                title = usageAccessTitle,
+                subtitle = usageAccessSubtitle,
+                action = MoreAction.USAGE_ACCESS,
             )
         )
     }
 
-    val appearanceItems = remember(themeSubtitle) {
+    val generalItems = remember(themeSubtitle) {
         listOf(
             MoreItemSpec(
                 icon = Icons.Rounded.Palette,
@@ -292,6 +377,14 @@ fun MoreScreen(
                     context.startActivity(intent)
                 } catch (_: Exception) { }
             }
+            MoreAction.SPEED_UNIT -> showSpeedUnitDialog = true
+            MoreAction.DATA_UNIT -> showDataUnitDialog = true
+            MoreAction.USAGE_ACCESS -> {
+                val intent = Intent(ACTION_USAGE_ACCESS_SETTINGS)
+                try {
+                    context.startActivity(intent)
+                } catch (_: Exception) { }
+            }
             MoreAction.THEME -> showThemeDialog = true
             MoreAction.HELP -> showHelpDialog = true
             MoreAction.ABOUT -> showAboutDialog = true
@@ -311,9 +404,29 @@ fun MoreScreen(
         ThemeDialog(
             currentMode = themeMode,
             onModeSelected = { mode ->
-                scope.launch { setThemeMode(context, mode) }
+                onThemeModeSelected(mode) { showThemeDialog = false }
             },
             onDismiss = { showThemeDialog = false }
+        )
+    }
+
+    if (showSpeedUnitDialog) {
+        SpeedUnitDialog(
+            currentUnit = speedUnit,
+            onUnitSelected = { unit ->
+                onSpeedUnitSelected(unit) { showSpeedUnitDialog = false }
+            },
+            onDismiss = { showSpeedUnitDialog = false }
+        )
+    }
+
+    if (showDataUnitDialog) {
+        DataUnitDialog(
+            currentUnit = dataUnit,
+            onUnitSelected = { unit ->
+                onDataUnitSelected(unit) { showDataUnitDialog = false }
+            },
+            onDismiss = { showDataUnitDialog = false }
         )
     }
 
@@ -322,14 +435,20 @@ fun MoreScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         MoreSectionBlock(
-            title = stringResource(id = R.string.more_section_general),
-            items = generalItems,
+            title = stringResource(id = R.string.more_section_notification),
+            items = notificationSettingsItems,
             onItemAction = ::onItemAction,
         )
 
         MoreSectionBlock(
-            title = stringResource(id = R.string.more_section_appearance),
-            items = appearanceItems,
+            title = stringResource(id = R.string.more_section_notification_layout),
+            items = notificationLayoutItems,
+            onItemAction = ::onItemAction,
+        )
+
+        MoreSectionBlock(
+            title = stringResource(id = R.string.more_section_general),
+            items = generalItems,
             onItemAction = ::onItemAction,
         )
 
@@ -653,6 +772,107 @@ private fun ThemeDialog(
                     ) {
                         RadioButton(
                             selected = mode == currentMode,
+                            onClick = null,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun SpeedUnitDialog(
+    currentUnit: SpeedUnit,
+    onUnitSelected: (SpeedUnit) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val dialogLabel = stringResource(id = R.string.speed_unit_dialog_label)
+    val closeLabel = stringResource(id = R.string.dialog_close)
+    val options = listOf(
+        SpeedUnit.BYTES_PER_SECOND to stringResource(id = R.string.more_speed_unit_subtitle_bytes),
+        SpeedUnit.BITS_PER_SECOND to stringResource(id = R.string.more_speed_unit_subtitle_bits),
+    )
+
+    AppAlertDialog(
+        onDismissRequest = onDismiss,
+        title = stringResource(id = R.string.more_speed_unit_title),
+        icon = Icons.Rounded.Speed,
+        dialogLabel = dialogLabel,
+        confirmButtonLabel = closeLabel,
+        onConfirm = onDismiss,
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                options.forEach { (unit, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = unit == currentUnit,
+                                role = Role.RadioButton,
+                                onClick = { onUnitSelected(unit) },
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = unit == currentUnit,
+                            onClick = null,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun DataUnitDialog(
+    currentUnit: DataUnit,
+    onUnitSelected: (DataUnit) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val dialogLabel = stringResource(id = R.string.data_unit_dialog_label)
+    val closeLabel = stringResource(id = R.string.dialog_close)
+    val options = listOf(
+        DataUnit.BITS_DECIMAL to stringResource(id = R.string.more_data_unit_subtitle_bits_decimal),
+        DataUnit.BYTES_DECIMAL to stringResource(id = R.string.more_data_unit_subtitle_bytes_decimal),
+        DataUnit.BYTES_BINARY to stringResource(id = R.string.more_data_unit_subtitle_bytes_binary),
+    )
+
+    AppAlertDialog(
+        onDismissRequest = onDismiss,
+        title = stringResource(id = R.string.more_data_unit_title),
+        icon = Icons.Rounded.DataUsage,
+        dialogLabel = dialogLabel,
+        confirmButtonLabel = closeLabel,
+        onConfirm = onDismiss,
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                options.forEach { (unit, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = unit == currentUnit,
+                                role = Role.RadioButton,
+                                onClick = { onUnitSelected(unit) },
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = unit == currentUnit,
                             onClick = null,
                         )
                         Spacer(modifier = Modifier.width(8.dp))

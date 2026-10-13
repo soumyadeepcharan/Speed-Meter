@@ -18,14 +18,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.sdcgroup.speedmeter.data.DataUnit
+import com.sdcgroup.speedmeter.data.SpeedUnit
 import com.sdcgroup.speedmeter.data.ThemeMode
+import com.sdcgroup.speedmeter.data.dataUnitFlow
 import com.sdcgroup.speedmeter.data.indicatorEnabledFlow
+import com.sdcgroup.speedmeter.data.setDataUnit
+import com.sdcgroup.speedmeter.data.setSpeedUnit
+import com.sdcgroup.speedmeter.data.setThemeMode
+import com.sdcgroup.speedmeter.data.speedUnitFlow
 import com.sdcgroup.speedmeter.data.themeModeFlow
 import com.sdcgroup.speedmeter.service.SpeedMonitorService
 import com.sdcgroup.speedmeter.ui.MyComposeApplicationTheme
@@ -86,10 +94,38 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SpeedMeterApp() {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val topAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val themeModeFlow = remember { themeModeFlow(context) }
     val themeMode by themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
+
+    val speedUnitFlow = remember { speedUnitFlow(context) }
+    val speedUnit by speedUnitFlow.collectAsState(initial = SpeedUnit.BYTES_PER_SECOND)
+
+    val dataUnitFlow = remember { dataUnitFlow(context) }
+    val dataUnit by dataUnitFlow.collectAsState(initial = DataUnit.BYTES_BINARY)
+
+    fun onThemeModeSelected(mode: ThemeMode, onSaved: () -> Unit) {
+        scope.launch {
+            setThemeMode(context, mode)
+            onSaved()
+        }
+    }
+
+    fun onSpeedUnitSelected(unit: SpeedUnit, onSaved: () -> Unit) {
+        scope.launch {
+            setSpeedUnit(context, unit)
+            onSaved()
+        }
+    }
+
+    fun onDataUnitSelected(unit: DataUnit, onSaved: () -> Unit) {
+        scope.launch {
+            setDataUnit(context, unit)
+            onSaved()
+        }
+    }
 
     MyComposeApplicationTheme(themeMode = themeMode) {
         Scaffold(
@@ -99,11 +135,18 @@ fun SpeedMeterApp() {
             topBar = {
                 SpeedMeterTopAppBar(
                     title = stringResource(id = R.string.app_name),
+                    themeMode = themeMode,
                     scrollBehavior = topAppBarScrollBehavior
                 )
             }
         ) { innerPadding ->
             SpeedMeterHomeMoreContent(
+                themeMode = themeMode,
+                onThemeModeSelected = ::onThemeModeSelected,
+                speedUnit = speedUnit,
+                onSpeedUnitSelected = ::onSpeedUnitSelected,
+                dataUnit = dataUnit,
+                onDataUnitSelected = ::onDataUnitSelected,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
