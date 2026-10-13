@@ -1,13 +1,14 @@
 Speed Meter - Changelog
 =======================
 
-[0.2.0] - Foundation Update (versionName 0.2.0, versionCode 2)
---------------------------------------------------------------
+[0.3.0] - Live Network Speed Indicator (versionName 0.3.0, versionCode 3)
+------------------------------------------------------------------------
 
 Tech Stack
 ----------
 - Language:             Kotlin 2.1.20
-- UI Toolkit:           Jetpack Compose with Material 3
+- UI Toolkit:           Jetpack Compose with Material 3 1.5.0-alpha03
+                        (pre-release)
 - Compose BOM:          2026.02.01
 - Build System:         Gradle (Kotlin DSL), Android Gradle Plugin 8.11.0
 - Compose Compiler:     Kotlin Compose compiler plugin (2.1.20)
@@ -15,8 +16,14 @@ Tech Stack
 - Android Target SDK:   36
 - Android Compile SDK:  36
 - JVM Target:           17 (set explicitly for Java and Kotlin compilation)
-- Opt-in:               androidx.compose.material3.ExperimentalMaterial3Api
+- Opt-in:               ExperimentalMaterial3Api,
+                        ExperimentalMaterial3ExpressiveApi
+- Coroutines:           kotlinx-coroutines-android 1.9.0 (declared directly in
+                        app/build.gradle.kts, not in the version catalog)
+- Persistence:          DataStore Preferences 1.1.1
 - AndroidX Libraries:   core-ktx 1.16.0, lifecycle-runtime-ktx 2.9.0,
+                        lifecycle-viewmodel-compose 2.9.0,
+                        lifecycle-runtime-compose 2.9.0,
                         activity-compose 1.10.1, collection-ktx 1.4.5
 - Compose Libraries:    foundation, material-icons-core, material3,
                         runtime-saveable, ui, ui-graphics, ui-tooling-preview
@@ -27,8 +34,8 @@ Tech Stack
 - Release (release.yml): GitHub Actions. Runs on tags matching v*. Builds a
                         release APK, signs it with v1/v2/v3/v4 schemes,
                         verifies it with apksigner (--print-certs), publishes
-                        it to a GitHub Release, and deletes the keystore
-                        after signing.
+                        it to a GitHub Release, and deletes the keystore after
+                        signing.
 - Actions versions:     checkout v6, setup-java v6, setup-gradle v6,
                         upload-artifact v7, action-gh-release v3
 
@@ -43,44 +50,79 @@ Build Configuration
 - AndroidX enabled; non-transitive R class enabled; Gradle configuration
   cache enabled.
 
+Manifest
+--------
+- Permissions:
+  - android.permission.INTERNET
+  - android.permission.ACCESS_NETWORK_STATE
+  - android.permission.FOREGROUND_SERVICE
+  - android.permission.FOREGROUND_SERVICE_DATA_SYNC
+  - android.permission.POST_NOTIFICATIONS (requested at runtime on API 33+)
+- Activity: MainActivity, exported = true, screenOrientation = sensor,
+  windowSoftInputMode = adjustResize.
+- Service: SpeedMonitorService, exported = false,
+  foregroundServiceType = dataSync.
+- allowBackup = true, with backup_rules.xml and data_extraction_rules.xml.
+
 Features Implemented
 --------------------
-App Shell
-- MainActivity extends ComponentActivity and hosts SpeedMeterApp() in
-  setContent.
-- enableEdgeToEdge() is called for an edge-to-edge display.
-- SpeedMeterApp wraps the screen in MyComposeApplicationTheme and a Material 3
-  Scaffold.
-- The top bar (ui/screens/TopAppBar.kt, SpeedMeterTopAppBar) shows the title
-  "Speed Meter" from strings.xml. It uses pinned scroll behaviour through
-  TopAppBarDefaults.pinnedScrollBehavior() and a nestedScroll connection on the
-  Scaffold.
-- The body is an empty Surface filled to the window, using the theme background
-  colour. There is no content yet.
-- Manifest: one launcher activity (MainActivity), exported = true,
-  screenOrientation = sensor, windowSoftInputMode = adjustResize.
+Network Speed Monitoring (service/, data/, notification/)
+- SpeedMonitorService: foreground service (START_STICKY) that samples
+  TrafficStats.getTotalRxBytes() and getTotalTxBytes() every 1 second on
+  Dispatchers.Default. It computes download and upload bytes per second from
+  the deltas and the elapsed time. Counters that fall or report UNSUPPORTED
+  are treated as zero.
+- Data formatting (data/Speed.kt): formatSpeed() shows KB/s with no decimals
+  below 1,024 KB/s, and MB/s with one decimal above that. Speed holds down, up,
+  and total as HumanSpeed(speedValue, speedUnit). getHumanSpeed() returns the
+  matching value for "download", "upload", or total.
+- NotificationHelper: channel "netspeed_channel" (IMPORTANCE_LOW, no badge),
+  an ongoing, local-only, low-priority notification with a custom content view.
+  Notification ID 1001.
+- notification_layout.xml: total speed and unit on the left, and a details line
+  with "Down" and "Up" values with units on the right.
+- IconGenerator: draws the total speed and unit as a 96 x 96 white bitmap,
+  used as the status bar small icon. Value text is 46sp, 38sp, or 30sp by
+  digit count, and unit text is 20sp. Typeface: sans-serif-condensed bold for
+  the value, default bold for the unit.
+
+Settings (data/SettingsDataStore.kt, ui/screens/IndicatorEnableSetting.kt)
+- DataStore Preferences named "settings", with key "indicatorEnabled"
+  (Boolean, default true).
+- indicatorEnabledFlow(context) exposes the setting as a Flow, with an IOException
+  fallback to empty preferences.
+- setIndicatorEnabled(context, enabled) writes the setting.
+- IndicatorEnableSetting: a ListItem titled "Enable indicator" with the
+  supporting text "Show NetSpeed indicator in the status bar". Turning it on
+  starts the service, and turning it off stops it.
+- Switch component (ui/screens/UiWidgets.kt): reusable Material 3 Switch with
+  a check icon in the thumb when checked, a LongPress haptic on toggle, and a
+  configurable contentDescription (here "Toggle NetSpeed status bar indicator").
+
+Main Screen (MainActivity.kt, ui/screens)
+- MainActivity requests POST_NOTIFICATIONS on API 33+ if it is not granted, and
+  starts the service when granted. On API 26 to 32 it starts the service
+  directly.
+- SpeedMeterApp: wraps the screen in MyComposeApplicationTheme and a Material 3
+  Scaffold with:
+  - Top bar (TopAppBar.kt, SpeedMeterTopAppBar) titled from strings.xml, with
+    pinned scroll behaviour. It does not render a theme toggle yet.
+  - Body: a Box containing a Surface with IndicatorEnableSetting, and the
+    bottom toolbar aligned to BottomCenter.
+- Bottom toolbar (BottomToolbar.kt, SpeedMeterBottomToolbar): a
+  HorizontalFloatingToolbar with Home and More items, exit-always scroll
+  behaviour from the bottom edge, and labels hidden on ExtraCompact windows
+  (under 300dp wide). Click handlers are empty placeholders.
 
 Theming (ui/theme)
 - Color.kt: Purple, PurpleGrey and Pink palettes used as the fallback scheme.
 - Theme.kt: MyComposeApplicationTheme(darkTheme, dynamicColor = true).
-  - Light and dark schemes. The initial mode comes from isSystemInDarkTheme().
-  - Dynamic colour (Material You) on API 31+ via dynamicLightColorScheme and
-    dynamicDarkColorScheme.
+  - Light and dark schemes. Dynamic colour (Material You) on API 31+.
   - System bar icon appearance follows the theme through WindowCompat's
-    insets controller (isAppearanceLightStatusBars and
-    isAppearanceLightNavigationBars).
+    insets controller.
 - Type.kt: base Typography with a bodyLarge style.
-- Dark mode state in SpeedMeterApp is held with rememberSaveable and seeded from
-  the system setting. No UI currently changes it.
-
-Components (ui/screens)
-- TopAppBar.kt: SpeedMeterTopAppBar(title, isDarkTheme, onThemeToggle,
-  scrollBehavior, modifier). It renders a Material 3 TopAppBar and does not
-  yet use isDarkTheme or onThemeToggle.
-- UiWidgets.kt: ThemeSwitch(checked, onCheckedChange, modifier, enabled), a
-  Material 3 Switch with a check icon in the thumb. It is not yet placed in
-  any screen. It triggers LongPress haptic feedback on toggle and sets the
-  content description "Toggle dark theme".
+- The dark mode state in SpeedMeterApp is held with rememberSaveable and
+  seeded from the system setting. No visible control changes it yet.
 
 Layout Utilities (ui/utils)
 - WindowSizeClass.kt: width classes (ExtraCompact < 300dp, Compact < 600dp,
@@ -90,44 +132,51 @@ Layout Utilities (ui/utils)
 - WindowSizeDefaults.kt: supporting defaults for the window size helpers.
 
 Adaptive App Icon
-- Launcher icon definitions in mipmap-anydpi-v26 and mipmap-anydpi-v33
-  (standard and round).
-- Background: drawable/ic_launcher_background.xml (light) and
-  drawable-night/ic_launcher_background.xml (dark).
-- Foreground: drawable/ and drawable-v24/ ic_launcher_foreground.xml, with
-  drawable-night/ and drawable-night-v24/ dark variants. Design: a 7-segment
-  coloured circular gauge arc with a needle group.
+- Launcher icon in mipmap-anydpi-v26 and mipmap-anydpi-v33 (standard and round).
+- Background: drawable/ and drawable-night/ ic_launcher_background.xml.
+- Foreground: drawable/, drawable-v24/, drawable-night/, and
+  drawable-night-v24/ ic_launcher_foreground.xml. Design: a 7-segment coloured
+  circular gauge arc with a needle group.
 - Monochrome: drawable/ic_launcher_monochrome.xml for Android 13+ themed icons.
-- Source: assets/ic_launcher.svg, matching the vector drawables.
+- Source: assets/ic_launcher.svg.
 
-Manifest, Backup and Config
-- allowBackup = true, with backup_rules.xml (fullBackupContent) and
-  data_extraction_rules.xml (dataExtractionRules).
-- No permissions are requested.
-- .gitignore files at the project root and in the app module.
-
-Changes Since 0.1.0
+Changes Since 0.2.0
 -------------------
-- Added the top app bar with pinned scroll behaviour (replaces the empty
-  Scaffold-less shell).
-- Added SpeedMeterApp, the theme state holder, and the ThemeSwitch and
-  SpeedMeterTopAppBar components (ThemeSwitch not yet visible).
-- Screen orientation changed from locked to sensor-driven.
+- Added live network speed monitoring through SpeedMonitorService and
+  TrafficStats.
+- Added the status bar indicator notification, with a generated status bar
+  icon and a Down/Up details line.
+- Added the notification channel "netspeed_channel".
+- Added the "Enable indicator" setting, saved with DataStore Preferences.
+- Added the floating bottom toolbar with Home and More placeholders.
+- Added the POST_NOTIFICATIONS runtime request for Android 13 and newer.
+- Added the INTERNET, ACCESS_NETWORK_STATE, FOREGROUND_SERVICE, and
+  FOREGROUND_SERVICE_DATA_SYNC permissions.
+- Added the Lifecycle ViewModel and Runtime Compose, DataStore Preferences, and
+  kotlinx-coroutines-android libraries.
+- Upgraded Material 3 to 1.5.0-alpha03 (pre-release).
+- Switch component is now general-purpose with a configurable content
+  description.
+
+[0.2.0] - Foundation Update (versionName 0.2.0, versionCode 2)
+--------------------------------------------------------------
+
+- Added the top app bar titled "Speed Meter" with pinned scroll behaviour.
+- Added SpeedMeterApp and the dark mode state holder.
+- Changed screen orientation from locked to sensor-driven.
 - Added adjustResize for keyboard handling.
-- Added the Compose Foundation, Material Icons Core, and Runtime Saveable
-  libraries.
+- Added Compose Foundation, Material Icons Core, and Runtime Saveable.
 - Upgraded AndroidX Core KTX, Lifecycle Runtime KTX, Activity Compose, and the
   Compose BOM.
 - Added JVM 17 explicit compile settings and the Material 3 experimental opt-in.
-- Release pipeline now adds a v4 signature, verifies with apksigner
-  --print-certs, and deletes the keystore after signing.
+- Release pipeline adds a v4 signature, verifies with apksigner --print-certs,
+  and deletes the keystore after signing.
 - Updated GitHub Actions versions.
 
 [0.1.0] - Foundation Release (versionName 0.1.0, versionCode 1)
 ---------------------------------------------------------------
 
-- Initial app shell: MainActivity with enableEdgeToEdge() and an empty Material 3
-  Surface.
+- Initial app shell: MainActivity with enableEdgeToEdge().
 - Theming system: light and dark schemes, dynamic colour on API 31+, and system
   bar icon appearance.
 - Adaptive app icon: background, 7-segment gauge foreground, night variants,
@@ -136,14 +185,23 @@ Changes Since 0.1.0
 - CI workflow for debug APK builds and a release workflow for tagged builds.
 - Backup and data-extraction rules; .gitignore files.
 
-Known Limitations
------------------
-- No network speed measurement, and no speed calculation logic.
-- No permissions, foreground service, or notification.
-- No visible theme toggle: ThemeSwitch is defined but not placed in the app bar.
-  The dark mode state is not user-controllable yet.
-- No DataStore or other persistence layer.
-- No speed gauge logic connected to the icon's design.
-- No settings, history, or about screens.
+Known Limitations and Issues
+----------------------------
+- Known issue: MainActivity starts SpeedMonitorService on every launch, without
+  checking the indicatorEnabled setting. If the user turns the indicator off
+  and then opens the app, the service starts again while the switch shows off.
+  The fix is to read the saved setting before starting the service.
+- The Home and More toolbar buttons have empty click handlers.
+- No visible theme toggle. SpeedMeterTopAppBar does not render the ThemeSwitch
+  component, and the dark mode state cannot be changed by the user.
+- Material 3 1.5.0-alpha03 is a pre-release and may show visual quirks.
+- Daily data usage tracking is not implemented.
+- No speed history, speedometer gauge, or settings screen beyond the indicator
+  switch.
+- No About screen.
 - No unit or instrumented tests.
-- Pinned scroll behaviour has no visible effect until scrollable content exists.
+- No DataStore-backed unit or theme preference.
+- No animated launcher icon (the animated drawable is not in this build).
+- Pinned scroll behaviour and the bottom toolbar's exit-always scroll have no
+  effect until scrollable content exists.
+  

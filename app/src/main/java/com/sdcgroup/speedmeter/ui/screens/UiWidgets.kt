@@ -6,7 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
+import androidx.compose.material3.Switch as Material3Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -23,17 +23,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.sdcgroup.speedmeter.ui.theme.MyComposeApplicationTheme
 
 @Composable
-fun ThemeSwitch(
+fun Switch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    contentDescription: String = "Toggle switch"
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
 
-    Switch(
-        modifier = modifier.semantics { contentDescription = "Toggle dark theme" },
+    Material3Switch(
+        modifier = modifier.semantics { this.contentDescription = contentDescription },
         checked = checked,
         onCheckedChange = { newChecked ->
             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)

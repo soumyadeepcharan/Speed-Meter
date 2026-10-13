@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Speed Meter</string>
+    <string name="netspeed_channel_name">NetSpeed Indicator</string>
+    <string name="netspeed_channel_description">Shows current network speed</string>
+    <string name="download_label">Down</string>
+    <string name="upload_label">Up</string>
 </resources>
