@@ -19,7 +19,12 @@ data class Speed(
     }
 }
 
-private fun scaledMagnitude(value: Double, base: Double, units: List<String>): Pair<String, String> {
+private fun scaledMagnitude(
+    value: Double,
+    base: Double,
+    units: List<String>,
+    decimalsForUnitIndex: (Int) -> Int
+): Pair<String, String> {
     var scaledValue = value
     var unitIndex = 0
 
@@ -28,18 +33,22 @@ private fun scaledMagnitude(value: Double, base: Double, units: List<String>): P
         unitIndex++
     }
 
-    val decimals = if (unitIndex == 0) 0 else 1
+    var decimals = decimalsForUnitIndex(unitIndex)
     var formatted = String.format("%.${decimals}f", scaledValue)
 
     if (formatted.toDouble() >= base && unitIndex < units.size - 1) {
         unitIndex++
         scaledValue /= base
-        val nextDecimals = if (unitIndex == 0) 0 else 1
-        formatted = String.format("%.${nextDecimals}f", scaledValue)
+        decimals = decimalsForUnitIndex(unitIndex)
+        formatted = String.format("%.${decimals}f", scaledValue)
     }
 
     return formatted to units[unitIndex]
 }
+
+private fun speedDecimals(unitIndex: Int): Int = if (unitIndex < 2) 0 else 1
+
+private fun dataDecimals(unitIndex: Int): Int = if (unitIndex == 0) 0 else 2
 
 fun formatSpeed(bytesPerSecond: Long, unit: SpeedUnit = SpeedUnit.BYTES_PER_SECOND): HumanSpeed {
     val safeBytes = if (bytesPerSecond < 0) 0L else bytesPerSecond
@@ -49,7 +58,8 @@ fun formatSpeed(bytesPerSecond: Long, unit: SpeedUnit = SpeedUnit.BYTES_PER_SECO
             val (value, label) = scaledMagnitude(
                 value = safeBytes.toDouble(),
                 base = 1024.0,
-                units = listOf("B/s", "KB/s", "MB/s", "GB/s")
+                units = listOf("B/s", "KB/s", "MB/s", "GB/s"),
+                decimalsForUnitIndex = ::speedDecimals
             )
             HumanSpeed(speedValue = value, speedUnit = label)
         }
@@ -58,7 +68,8 @@ fun formatSpeed(bytesPerSecond: Long, unit: SpeedUnit = SpeedUnit.BYTES_PER_SECO
             val (value, label) = scaledMagnitude(
                 value = bitsPerSecond,
                 base = 1000.0,
-                units = listOf("b/s", "Kb/s", "Mb/s", "Gb/s")
+                units = listOf("b/s", "Kb/s", "Mb/s", "Gb/s"),
+                decimalsForUnitIndex = ::speedDecimals
             )
             HumanSpeed(speedValue = value, speedUnit = label)
         }
@@ -72,17 +83,20 @@ fun formatDataUsage(bytes: Long, unit: DataUnit = DataUnit.BYTES_BINARY): String
         DataUnit.BITS_DECIMAL -> scaledMagnitude(
             value = safeBytes * 8.0,
             base = 1000.0,
-            units = listOf("b", "Kb", "Mb", "Gb", "Tb")
+            units = listOf("b", "Kb", "Mb", "Gb", "Tb"),
+            decimalsForUnitIndex = ::dataDecimals
         )
         DataUnit.BYTES_DECIMAL -> scaledMagnitude(
             value = safeBytes.toDouble(),
             base = 1000.0,
-            units = listOf("B", "kB", "MB", "GB", "TB")
+            units = listOf("B", "kB", "MB", "GB", "TB"),
+            decimalsForUnitIndex = ::dataDecimals
         )
         DataUnit.BYTES_BINARY -> scaledMagnitude(
             value = safeBytes.toDouble(),
             base = 1024.0,
-            units = listOf("B", "KiB", "MiB", "GiB", "TiB")
+            units = listOf("B", "KiB", "MiB", "GiB", "TiB"),
+            decimalsForUnitIndex = ::dataDecimals
         )
     }
 

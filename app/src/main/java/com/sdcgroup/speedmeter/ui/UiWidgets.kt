@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
@@ -94,6 +96,15 @@ fun Switch(
         label = "switchThumbColor"
     )
 
+    val progress = if (maxOffsetPx > 0f) {
+        (animatedOffsetPx / maxOffsetPx).coerceIn(0f, 1f)
+    } else {
+        if (checked) 1f else 0f
+    }
+
+    val uncheckedIconAlpha = (1f - (progress / 0.5f)).coerceIn(0f, 1f)
+    val checkedIconAlpha = ((progress - 0.5f) / 0.5f).coerceIn(0f, 1f)
+
     Box(
         modifier = modifier
             .size(width = SwitchTrackWidth, height = SwitchTrackHeight)
@@ -151,14 +162,22 @@ fun Switch(
                 .background(thumbColor),
             contentAlignment = Alignment.Center,
         ) {
-            if (checked) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(14.dp),
-                )
-            }
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.surface,
+                modifier = Modifier
+                    .size(14.dp)
+                    .graphicsLayer { alpha = uncheckedIconAlpha },
+            )
+            Icon(
+                imageVector = Icons.Filled.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .size(14.dp)
+                    .graphicsLayer { alpha = checkedIconAlpha },
+            )
         }
     }
 }

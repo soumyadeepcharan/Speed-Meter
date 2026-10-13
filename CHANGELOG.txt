@@ -1,8 +1,8 @@
 Speed Meter - Changelog
 =======================
 
-[0.7.0] - Daily Usage, Units, and Custom Switch (versionName 0.7.0, versionCode 8)
----------------------------------------------------------------------------------
+[0.7.1] - Usage Access Switch and Display Polish (versionName 0.7.1, versionCode 9)
+-----------------------------------------------------------------------------------
 
 Tech Stack
 ----------
@@ -35,7 +35,8 @@ Tech Stack
                         material3, runtime-saveable, ui, ui-graphics,
                         ui-tooling-preview
 - Platform APIs:        TrafficStats, NetworkStatsManager, NetworkInterface,
-                        AppOpsManager (usage access check), ConnectivityManager
+                        AppOpsManager (usage access check, checkOpNoThrow),
+                        ConnectivityManager network type constants
 - Package/Namespace:    com.sdcgroup.speedmeter
 - CI (ci.yml):          GitHub Actions. Builds a debug APK on push and pull
                         requests to main, signs it with v1/v2/v3/v4 schemes,
@@ -61,6 +62,9 @@ Build Configuration
 - BuildConfig generation enabled (used for the version name in the More section).
 - AndroidX enabled; non-transitive R class enabled; Gradle configuration
   cache enabled.
+- .gitignore: the keystore lines (*.jks, *.keystore, keystore.base64,
+  release.properties) are commented out in 0.7.1. Signing files can be committed
+  by mistake. Restore these rules before pushing the project to a repository.
 
 Manifest
 --------
@@ -92,7 +96,7 @@ Source Layout
   - ui/: Color.kt, Theme.kt, Type.kt, TopAppBar.kt, HomeScreen.kt (Home section,
     More sections, and dialogs), UiWidgets.kt (custom Switch, AppAlertDialog),
     WindowSizeClass.kt, WindowSizeDefaults.kt.
-- res/layout/notification_layout.xml: one vertical notification line.
+- res/layout/notification_layout.xml: one line of notification text.
 - res/drawable/ic_settings_black_24dp.xml: hidden icon in the notification layout.
 
 Features Implemented
@@ -106,16 +110,17 @@ Network Speed (service/, data/, notification/)
 - Speed units (data/Speed.kt, formatSpeed):
   - BYTES_PER_SECOND (default): B/s, KB/s, MB/s, GB/s with base 1024.
   - BITS_PER_SECOND: b/s, Kb/s, Mb/s, Gb/s with base 1000, from bytes × 8.
-  - Whole numbers below the first unit step, one decimal above it.
-  - The unit is read from DataStore and applied to the notification and icon.
+  - Speed values use 0 decimals for the first two units (B/s, KB/s or b/s,
+    Kb/s) and 1 decimal above that.
 - Speed unit is stored as speedUnit (Int 0 or 1).
 
 Daily Data Usage (service/SpeedMonitorService.kt, data/SettingsDataStore.kt)
 - Totals are for the current local day, from midnight.
-- With Usage access granted (AppOpsManager OPSTR_GET_USAGE_STATS = MODE_ALLOWED):
-  - Mobile total = NetworkStatsManager.querySummaryForDevice(TYPE_MOBILE) from
+- With Usage access granted (AppOpsManager.checkOpNoThrow with
+  OPSTR_GET_USAGE_STATS = MODE_ALLOWED):
+  - Mobile total = NetworkStatsManager.querySummaryForDevice(type 0) from
     midnight to now, RX plus TX.
-  - Wi-Fi total = the same query for TYPE_WIFI.
+  - Wi-Fi total = the same query with type 1.
 - Without Usage access (fallback):
   - A daily baseline (date, total bytes, Wi-Fi bytes) is stored in DataStore.
   - Totals are the current counters minus the baseline, floored at zero.
@@ -127,7 +132,7 @@ Daily Data Usage (service/SpeedMonitorService.kt, data/SettingsDataStore.kt)
   - BITS_DECIMAL: b, Kb, Mb, Gb, Tb (base 1000, from bytes × 8).
   - BYTES_DECIMAL: B, kB, MB, GB, TB (base 1000).
   - BYTES_BINARY (default): B, KiB, MiB, GiB, TiB (base 1024).
-- formatDataUsage() scales the value and uses one decimal above the byte unit.
+- Data usage values use 0 decimals for the byte unit and 2 decimals above it.
 - The notification shows four values: Down, Up, Data (mobile), and WiFi.
 
 Settings (data/SettingsDataStore.kt)
@@ -144,8 +149,8 @@ Settings (data/SettingsDataStore.kt)
 Service Start Logic (MainActivity.kt)
 - MainActivity requests POST_NOTIFICATIONS on API 33+ if it is not granted.
 - startServiceIfEnabledOnce() reads indicatorEnabledFlow().first() in
-  lifecycleScope and starts SpeedMonitorService (foreground service on API 26+)
-  only when the saved value is true.
+  lifecycleScope and starts SpeedMonitorService (foreground service on API
+  26+) only when the saved value is true.
 - The same check runs after the permission prompt is answered (if granted) and
   directly on API 26 to 32.
 - SpeedMeterApp collects themeMode, speedUnit, and dataUnit, and passes setter
@@ -155,15 +160,18 @@ Notification (notification/NotificationHelper.kt, res/layout/notification_layout
 - Channel "netspeed_channel", named "Speed Meter" (IMPORTANCE_LOW, no badge).
 - Ongoing, local-only, low-priority notification, Notification ID 1001.
 - Uses DecoratedCustomViewStyle with a single vertical custom view.
-- Single text line: "Down: <value unit>  Up: <value unit>  Data: <value> WiFi: <value>".
-- The status bar icon is not shown in the custom view. Speed appears in the
-  status bar icon only.
+- Single text line, 15sp, no extra padding:
+  "Down: <value unit>  Up: <value unit>  Data: <value> WiFi: <value>".
+- The status bar icon shows the total speed only.
 
 Status Bar Icon (notification/IconGenerator.kt)
-- 72 x 72 white bitmap, drawn with the total speed value and unit centred
-  vertically.
-- Value text: 48sp, sans-serif-condensed bold, textScaleX 0.85.
-- Unit text: 24sp, sans-serif-black bold, textScaleX 0.9.
+- 72 x 72 white bitmap. The value and unit are centred vertically using the
+  measured text bounds.
+- Value text starts at 54sp and shrinks in steps of 2sp to a minimum of 26sp so
+  it fits within 94% of the icon width. Typeface: sans-serif-condensed bold.
+- Unit text starts at 28sp and shrinks to a minimum of 16sp by the same rule.
+  Typeface: sans-serif-black bold.
+- A 1px gap separates the value and the unit.
 
 Home Section (ui/HomeScreen.kt, HomeScreen)
 - A card (surfaceContainer, extraLarge shape) with a NetworkCheck icon, the
@@ -171,7 +179,6 @@ Home Section (ui/HomeScreen.kt, HomeScreen)
   and the custom Switch.
 - The whole row toggles the setting (Role.Switch).
 - The row is not drawn until the saved value has loaded.
-- The section title "Indicator" was removed.
 - Turning it on starts SpeedMonitorService. Turning it off stops it.
 
 More Section (ui/HomeScreen.kt, MoreScreen)
@@ -181,9 +188,11 @@ More Section (ui/HomeScreen.kt, MoreScreen)
      - Speed units: opens SpeedUnitDialog, with the current value as the subtitle.
      - Data usage units: opens DataUnitDialog, with the current value as the subtitle.
   2. Notification layout
-     - Usage access: subtitle shows granted or not granted. Tapping opens
-       ACTION_USAGE_ACCESS_SETTINGS. The status is checked on open and when the
-       screen is shown.
+     - Usage access: a switch row. The switch shows the current grant state.
+       Tapping the row, or the switch, opens ACTION_USAGE_ACCESS_SETTINGS.
+     - The grant state is checked when the screen first appears and again each
+       time the screen resumes (DisposableEffect with ON_RESUME). It updates
+       when you return from system settings.
   3. General
      - Choose theme: opens ThemeDialog. The subtitle is System default, Light
        mode, or Dark mode.
@@ -191,14 +200,17 @@ More Section (ui/HomeScreen.kt, MoreScreen)
      - About: opens AboutDialog.
   4. Footer: "Made with ❤️ from India by SDC Group".
 - Dialogs are AppAlertDialog instances with radio-style options in a
-  selectableGroup. Each option saves its value through the callback.
+  selectableGroup. Option rows are clipped to MaterialTheme.shapes.large with
+  horizontal padding.
 - Dialog state uses rememberSaveable, so dialogs survive rotation.
 - The page is one verticalScroll Column in SpeedMeterHomeMoreContent.
 
 Custom Switch (ui/UiWidgets.kt)
-- Track 52 x 32 dp, thumb 24 dp with 4 dp padding, and a check icon when on.
+- Track 52 x 32 dp, thumb 24 dp with 4 dp padding.
 - Tap toggles. A horizontal drag moves the thumb. Release snaps to on or off,
   using the midpoint, or toggles on a tap.
+- The thumb shows a Close icon when off and a Check icon when on. The two icons
+  cross-fade as the thumb moves past the midpoint.
 - Track and thumb colours animate with spring animations.
 - Haptic feedback on release.
 - Role.Switch and a configurable contentDescription.
@@ -230,8 +242,27 @@ Adaptive App Icon
 - Monochrome: drawable/ic_launcher_monochrome.xml for Android 13+ themed icons.
 - Source: assets/ic_launcher.svg.
 
-Changes Since 0.6.0
+Changes Since 0.7.0
 -------------------
+- Added a switch to the Usage access row. It shows the current grant state and
+  refreshes when the screen resumes, so it updates after returning from system
+  settings.
+- Changed the custom switch to show a Close icon when off and a Check icon when
+  on, with a cross-fade.
+- Changed the status bar icon to shrink long text to fit the icon width, and to
+  centre the value and unit using measured text bounds.
+- Changed speed decimals: 0 for the first two units, 1 above that.
+- Changed data decimals: 0 for bytes, 2 above that.
+- Changed the notification text to 15sp with no extra padding.
+- Changed the radio option rows to clip their ripple and use horizontal padding.
+- Simplified the Usage access check and the network type constants. Min SDK is
+  26, so the pre-Q branch was removed.
+- Commented out keystore rules in .gitignore (see Build Configuration).
+- Version bumped to 0.7.1 (versionCode 9).
+
+[0.7.0] - Daily Usage, Units, and Custom Switch (versionName 0.7.0, versionCode 8)
+---------------------------------------------------------------------------------
+
 - Added daily data usage. Totals reset at midnight. Uses NetworkStatsManager
   with Usage access, and falls back to a stored daily baseline without it.
 - Added the Usage access row in More → Notification layout.
@@ -241,14 +272,12 @@ Changes Since 0.6.0
 - Changed the Wi-Fi counter in the fallback to the wlan interface counters,
   replacing the total minus mobile estimate.
 - Changed the notification to one vertical line with Down, Up, Data, and WiFi.
-  The speed icon was removed from the notification view.
 - Changed the status bar icon to 72 x 72, with the value and unit centred.
 - Replaced the Switch component with a custom draggable switch.
 - Removed the "Indicator" section title on Home.
 - Moved Notification settings into their own section, and moved theme and
   support items into General.
 - Dialog content scrolls when it is taller than half the screen.
-- Version bumped to 0.7.0 (versionCode 8).
 
 [0.6.0] - Single-Page Layout and Code Reorganization (versionName 0.6.0, versionCode 7)
 ---------------------------------------------------------------------------------------
@@ -351,10 +380,11 @@ Known Limitations
   counters restart too.
 - The Wi-Fi fallback needs an interface named "wlan*". On devices that use
   another name, Wi-Fi shows 0 until Usage access is granted.
-- Daily totals and Wi-Fi totals depend on Android's usage records when Usage
-  access is granted. Figures can lag a few minutes behind real time.
+- With Usage access, figures come from Android's usage records and can lag a
+  few minutes behind real time.
 - No usage history, speed history, or speedometer gauge.
 - Material 3 1.5.0-alpha03 is a pre-release and may show visual quirks.
 - The Material 3 Adaptive libraries are still declared but not used.
 - No unit or instrumented tests.
 - No animated launcher icon (the animated drawable is not in this build).
+- Keystore files are not excluded by .gitignore in this version. See Build Configuration.

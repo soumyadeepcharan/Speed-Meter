@@ -4,9 +4,7 @@ import android.app.AppOpsManager
 import android.app.Service
 import android.app.usage.NetworkStatsManager
 import android.content.Intent
-import android.net.ConnectivityManager
 import android.net.TrafficStats
-import android.os.Build
 import android.os.IBinder
 import android.os.Process
 import com.sdcgroup.speedmeter.data.DataUnit
@@ -32,6 +30,11 @@ import java.time.LocalDate
 import java.util.Calendar
 
 class SpeedMonitorService : Service() {
+
+    companion object {
+        private const val NETWORK_TYPE_MOBILE = 0
+        private const val NETWORK_TYPE_WIFI = 1
+    }
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private lateinit var notificationHelper: NotificationHelper
@@ -100,8 +103,8 @@ class SpeedMonitorService : Service() {
 
     private fun getTodayUsage(): Pair<Long, Long> {
         return if (isUsageAccessGranted()) {
-            val mobileToday = queryBytesForTypeToday(ConnectivityManager.TYPE_MOBILE)
-            val wifiToday = queryBytesForTypeToday(ConnectivityManager.TYPE_WIFI)
+            val mobileToday = queryBytesForTypeToday(NETWORK_TYPE_MOBILE)
+            val wifiToday = queryBytesForTypeToday(NETWORK_TYPE_WIFI)
             mobileToday to wifiToday
         } else {
             val dataUsage = (currentDataBytes() - dailyDataBaseline).coerceAtLeast(0L)
@@ -112,20 +115,11 @@ class SpeedMonitorService : Service() {
 
     private fun isUsageAccessGranted(): Boolean {
         val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
-        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            appOps.unsafeCheckOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                Process.myUid(),
-                packageName
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            appOps.checkOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                Process.myUid(),
-                packageName
-            )
-        }
+        val mode = appOps.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            Process.myUid(),
+            packageName
+        )
         return mode == AppOpsManager.MODE_ALLOWED
     }
 

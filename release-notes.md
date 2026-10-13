@@ -1,48 +1,39 @@
-# Speed Meter v0.7.0: Daily Usage, Units, and a New Switch
+# Speed Meter v0.7.1: Usage Access Switch and Display Polish
 
-**Speed Meter v0.7.0** adds **daily data usage** to the status bar notification, lets you choose **speed and data units**, and brings a new, easier-to-use switch.
+**Speed Meter v0.7.1** makes Usage access easier to manage and tidies up how speeds and the status bar icon look.
 
 ---
 
 ## What's New
 
-### 📅 Daily Data Usage
-- **Today's totals.** The notification shows how much **mobile data** and **Wi-Fi data** you have used since midnight.
-- **Exact numbers with Usage access.** Open **More → Notification layout** and allow **Usage access** for exact totals from Android.
-- **Works without it, too.** Without Usage access, totals are estimated from your phone's data counters. They may read lower after a restart.
+### 🔘 Usage Access Switch
+- **Switch in More → Notification layout.** The Usage access row now has a switch that shows whether access is on.
+- **Updates on return.** When you come back from system settings, the switch shows the current state.
+- **Quick access.** Tap the row or its switch to open the Usage access setting.
 
-### 📏 Units You Can Choose
-- **Speed units.** Show speeds in **bytes per second** (KB/s, MB/s, GB/s) or **bits per second** (Kb/s, Mb/s, Gb/s).
-- **Data usage units.** Choose how sizes appear: bits (decimal), bytes (decimal, 1 MB = 1000 kB), or bytes (binary, 1 MiB = 1024 KiB, the default).
-- Both settings are in **More → Notification settings**.
+### 🔢 Cleaner Numbers
+- **Speed values** show whole numbers for B/s and KB/s, and one decimal place for MB/s and above.
+- **Data totals** show whole bytes, and two decimal places for KB and above.
 
-### 🔘 New Switch
-- The **Enable indicator** switch is redrawn. You can tap it or drag it.
+### 🖼️ Better Status Bar Icon
+- Long values and units shrink to fit the icon.
+- The value and unit are centred vertically.
 
-### 🧭 Clearer More Screen
-- **Notification settings** now holds the speed and data unit options.
-- **Notification layout** shows whether Usage access is granted.
-- **General** holds the theme, help, and About items.
-
-### 🖼️ Cleaner Notification
-- The notification shows one line: **Down**, **Up**, **Data**, and **WiFi**.
-- The status bar icon is slightly taller, with the speed value and unit centred.
-
-### 🪟 Scrollable Dialogs
-- Long dialogs scroll within half the screen height.
+### ✨ Polish
+- The custom switch shows a cross-fading check and close icon as you slide it.
+- Notification text is slightly larger and sits closer to the edges.
+- Unit option rows in dialogs have a neater tap area.
 
 ---
 
 ## Under the Hood
-- Daily totals use Android's usage records when Usage access is granted. Otherwise they use a saved daily baseline.
-- Wi-Fi is read from the Wi-Fi network interface in the fallback, instead of an estimate.
-- Unit choices and daily totals are saved on your device.
-- Version bumped to **0.7.0**.
+- Simplified the usage access check and network type handling.
+- Version bumped to **0.7.1**.
 
 ---
 
 ## Permissions
-- **Usage access** (optional) lets the app read Android's data usage records for exact daily totals. You can allow it in **More → Notification layout**. The app does not send your data anywhere.
+- **Usage access** (optional) lets the app read Android's data usage records for exact daily totals. Turn it on in **More → Notification layout**. The app does not send your data anywhere.
 
 ---
 

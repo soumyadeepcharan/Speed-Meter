@@ -21,7 +21,7 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 
 **Daily data usage**
 - **Today's mobile and Wi-Fi data.** The notification shows how much **Data** (mobile) and **WiFi** you have used since midnight.
-- **Accurate totals with Usage access.** Grant Usage access to get exact daily totals from Android. The app shows whether access is granted in **More → Notification layout**.
+- **Exact numbers with Usage access.** Grant Usage access to get exact daily totals from Android. The switch in **More → Notification layout** shows whether access is on. Turn it on there, or turn it off in system settings.
 - **Without Usage access.** The app still shows totals, but they may be lower after a phone restart.
 - **Data units.** Choose how sizes are shown:
   - Bits, decimal (Mb = 1000 Kb)
@@ -35,7 +35,7 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 - **Notification settings.** Opens your phone's notification settings for Speed Meter.
 - **Speed units.** Pick bytes or bits per second.
 - **Data usage units.** Pick one of the three data unit styles.
-- **Usage access.** Shows whether Usage access is granted, and opens the setting if it isn't.
+- **Usage access.** A switch that shows whether Usage access is on. Tapping it opens the system setting.
 - **Choose theme.** Pick **System default**, **Light mode** or **Dark mode**. Your choice is saved.
 - **Help & feedback.** Choose **Suggest a feature** or **Report a bug**. Either option opens your email app with a message ready to send to the developer. Bug reports include your app version, phone model and Android version.
 - **About.** Shows the app name, version and a short description.
@@ -43,7 +43,7 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 **Look and feel**
 - **Title bar.** The top of the screen shows "Speed Meter" and stays in place as you scroll.
 - **Single scrolling page.** Home and More are on one page. Scroll down to reach More.
-- **Custom switch.** The switch can be tapped or dragged.
+- **Custom switch.** The switch can be tapped or dragged. Its icon changes as it moves.
 - **Light, dark or system theme.** Follow your phone's setting, or choose light or dark mode in **More → Choose theme**.
 - **Wallpaper colours (Android 12 and newer).** On supported phones, the app picks its colours from your wallpaper.
 - **Standard colours on older phones.** Phones without wallpaper colours get a built-in colour scheme.
@@ -77,7 +77,7 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 3. Open the downloaded APK and tap **Install**.
 4. Open **Speed Meter**. If asked, allow notifications.
 5. On the Home section, turn on **Enable indicator** to see your speed in the status bar.
-6. Optional: in **More → Notification layout**, tap **Usage access** and allow it for exact daily totals.
+6. Optional: in **More → Notification layout**, turn on the **Usage access** switch for exact daily totals.
 
 ---
 

@@ -51,7 +51,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,12 +65,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.sdcgroup.speedmeter.BuildConfig
 import com.sdcgroup.speedmeter.R
 import com.sdcgroup.speedmeter.data.DataUnit
@@ -94,20 +97,11 @@ private fun stopIndicatorService(context: Context) {
 
 private fun isUsageAccessGranted(context: Context): Boolean {
     val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-    val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        appOps.unsafeCheckOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            Process.myUid(),
-            context.packageName
-        )
-    } else {
-        @Suppress("DEPRECATION")
-        appOps.checkOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            Process.myUid(),
-            context.packageName
-        )
-    }
+    val mode = appOps.checkOpNoThrow(
+        AppOpsManager.OPSTR_GET_USAGE_STATS,
+        Process.myUid(),
+        context.packageName
+    )
     return mode == AppOpsManager.MODE_ALLOWED
 }
 
@@ -124,6 +118,7 @@ private data class MoreItemSpec(
     val title: String,
     val subtitle: String? = null,
     val action: MoreAction? = null,
+    val trailingSwitch: Boolean? = null,
 )
 
 @Composable
@@ -254,6 +249,7 @@ fun MoreScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     var showHelpDialog by rememberSaveable { mutableStateOf(false) }
     var showAboutDialog by rememberSaveable { mutableStateOf(false) }
     var showThemeDialog by rememberSaveable { mutableStateOf(false) }
@@ -261,8 +257,14 @@ fun MoreScreen(
     var showDataUnitDialog by rememberSaveable { mutableStateOf(false) }
     var isUsageAccessGranted by remember { mutableStateOf(isUsageAccessGranted(context)) }
 
-    LaunchedEffect(Unit) {
-        isUsageAccessGranted = isUsageAccessGranted(context)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                isUsageAccessGranted = isUsageAccessGranted(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     val notificationTitle = stringResource(id = R.string.more_notification_title)
@@ -328,13 +330,14 @@ fun MoreScreen(
         )
     }
 
-    val notificationLayoutItems = remember(usageAccessSubtitle) {
+    val notificationLayoutItems = remember(usageAccessSubtitle, isUsageAccessGranted) {
         listOf(
             MoreItemSpec(
                 icon = Icons.Rounded.Verified,
                 title = usageAccessTitle,
                 subtitle = usageAccessSubtitle,
                 action = MoreAction.USAGE_ACCESS,
+                trailingSwitch = isUsageAccessGranted,
             )
         )
     }
@@ -567,12 +570,20 @@ private fun MoreListItem(
             }
         }
         Spacer(modifier = Modifier.width(8.dp))
-        Icon(
-            imageVector = Icons.Rounded.ChevronRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
-        )
+        if (item.trailingSwitch != null) {
+            Switch(
+                checked = item.trailingSwitch,
+                onCheckedChange = { onClick() },
+                contentDescription = item.title,
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Rounded.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 
@@ -762,12 +773,13 @@ private fun ThemeDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.large)
                             .selectable(
                                 selected = mode == currentMode,
                                 role = Role.RadioButton,
                                 onClick = { onModeSelected(mode) },
                             )
-                            .padding(vertical = 8.dp),
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(
@@ -812,12 +824,13 @@ private fun SpeedUnitDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.large)
                             .selectable(
                                 selected = unit == currentUnit,
                                 role = Role.RadioButton,
                                 onClick = { onUnitSelected(unit) },
                             )
-                            .padding(vertical = 8.dp),
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(
@@ -863,12 +876,13 @@ private fun DataUnitDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.large)
                             .selectable(
                                 selected = unit == currentUnit,
                                 role = Role.RadioButton,
                                 onClick = { onUnitSelected(unit) },
                             )
-                            .padding(vertical = 8.dp),
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(
