@@ -27,8 +27,6 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SpeedMeterHomeMoreContent(
-    isDarkTheme: Boolean,
-    onThemeToggle: (Boolean) -> Unit,
     bottomToolbarScrollBehavior: FloatingToolbarScrollBehavior,
     modifier: Modifier = Modifier
 ) {
@@ -58,7 +56,7 @@ fun SpeedMeterHomeMoreContent(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.Top
                         ) {
-                            IndicatorEnableSetting()
+                            HomeScreen()
                         }
                     }
                 }
@@ -66,8 +64,6 @@ fun SpeedMeterHomeMoreContent(
             detailPane = {
                 AnimatedPane {
                     MoreScreen(
-                        isDarkTheme = isDarkTheme,
-                        onThemeToggle = onThemeToggle,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

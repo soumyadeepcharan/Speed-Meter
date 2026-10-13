@@ -20,83 +20,58 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Help
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.DialogProperties
 import com.sdcgroup.speedmeter.BuildConfig
-
-private val DialogContainerShape = RoundedCornerShape(28.dp)
-private val DialogElevation = 6.dp
-private val DialogDividerHeight = 1.dp
+import com.sdcgroup.speedmeter.R
+import com.sdcgroup.speedmeter.data.ThemeMode
+import com.sdcgroup.speedmeter.data.setThemeMode
+import com.sdcgroup.speedmeter.data.themeModeFlow
+import kotlinx.coroutines.launch
 
 private const val ActionHoverStateLayerOpacity = 0.08f
 private const val ActionFocusStateLayerOpacity = 0.10f
 private const val ActionPressedStateLayerOpacity = 0.10f
 
-private val DialogHeadlineTextStyle = TextStyle(
-    fontFamily = FontFamily.Default,
-    fontWeight = FontWeight.W400,
-    fontSize = 24.sp,
-    lineHeight = 32.sp,
-    letterSpacing = 0.sp,
-)
-
-private val DialogActionTextStyle = TextStyle(
-    fontFamily = FontFamily.Default,
-    fontWeight = FontWeight.W500,
-    fontSize = 14.sp,
-    lineHeight = 20.sp,
-    letterSpacing = 0.1.sp,
-)
-
 private enum class MoreAction {
-    NOTIFICATIONS, HELP, ABOUT
+    NOTIFICATIONS, THEME, HELP, ABOUT
 }
 
 private data class MoreItemSpec(
@@ -108,37 +83,68 @@ private data class MoreItemSpec(
 
 @Composable
 fun MoreScreen(
-    isDarkTheme: Boolean,
-    onThemeToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var showHelpDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
+
+    val themeModeFlow = remember { themeModeFlow(context) }
+    val themeMode by themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
+
+    val notificationTitle = stringResource(id = R.string.more_notification_title)
+    val notificationSubtitle = stringResource(id = R.string.more_notification_subtitle)
+    val themeTitle = stringResource(id = R.string.more_theme_title)
+    val themeSubtitleSystem = stringResource(id = R.string.more_theme_subtitle_system)
+    val themeSubtitleLight = stringResource(id = R.string.more_theme_subtitle_light)
+    val themeSubtitleDark = stringResource(id = R.string.more_theme_subtitle_dark)
+    val helpTitle = stringResource(id = R.string.more_help_title)
+    val helpSubtitle = stringResource(id = R.string.more_help_subtitle)
+    val aboutTitle = stringResource(id = R.string.more_about_title)
+    val aboutSubtitle = stringResource(id = R.string.more_about_subtitle, BuildConfig.VERSION_NAME)
+
+    val themeSubtitle = when (themeMode) {
+        ThemeMode.SYSTEM -> themeSubtitleSystem
+        ThemeMode.LIGHT -> themeSubtitleLight
+        ThemeMode.DARK -> themeSubtitleDark
+    }
 
     val generalItems = remember {
         listOf(
             MoreItemSpec(
                 icon = Icons.Rounded.Notifications,
-                title = "Notification settings",
-                subtitle = "Manage NetSpeed indicator notifications",
+                title = notificationTitle,
+                subtitle = notificationSubtitle,
                 action = MoreAction.NOTIFICATIONS,
             )
         )
     }
 
-    val supportItems = remember {
+    val appearanceItems = remember(themeSubtitle) {
+        listOf(
+            MoreItemSpec(
+                icon = Icons.Rounded.Palette,
+                title = themeTitle,
+                subtitle = themeSubtitle,
+                action = MoreAction.THEME,
+            )
+        )
+    }
+
+    val supportItems = remember(helpSubtitle, aboutSubtitle) {
         listOf(
             MoreItemSpec(
                 icon = Icons.AutoMirrored.Rounded.Help,
-                title = "Help & feedback",
-                subtitle = "Suggest a feature or report a bug",
+                title = helpTitle,
+                subtitle = helpSubtitle,
                 action = MoreAction.HELP,
             ),
             MoreItemSpec(
                 icon = Icons.Rounded.Info,
-                title = "About",
-                subtitle = "v${BuildConfig.VERSION_NAME}",
+                title = aboutTitle,
+                subtitle = aboutSubtitle,
                 action = MoreAction.ABOUT,
             ),
         )
@@ -154,6 +160,7 @@ fun MoreScreen(
                     context.startActivity(intent)
                 } catch (_: Exception) { }
             }
+            MoreAction.THEME -> showThemeDialog = true
             MoreAction.HELP -> showHelpDialog = true
             MoreAction.ABOUT -> showAboutDialog = true
             else -> { }
@@ -168,6 +175,16 @@ fun MoreScreen(
         AboutDialog(onDismiss = { showAboutDialog = false })
     }
 
+    if (showThemeDialog) {
+        ThemeDialog(
+            currentMode = themeMode,
+            onModeSelected = { mode ->
+                scope.launch { setThemeMode(context, mode) }
+            },
+            onDismiss = { showThemeDialog = false }
+        )
+    }
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
@@ -175,74 +192,23 @@ fun MoreScreen(
     ) {
         item(key = "section_general") {
             MoreSectionBlock(
-                title = "General",
+                title = stringResource(id = R.string.more_section_general),
                 items = generalItems,
                 onItemAction = ::onItemAction,
             )
         }
 
         item(key = "section_appearance") {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = "Appearance",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
-                )
-                Surface(
-                    shape = MaterialTheme.shapes.extraLarge,
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.DarkMode,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Dark theme",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                text = "Switch between light and dark appearance",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Switch(
-                            checked = isDarkTheme,
-                            onCheckedChange = onThemeToggle,
-                            contentDescription = "Toggle dark theme",
-                        )
-                    }
-                }
-            }
+            MoreSectionBlock(
+                title = stringResource(id = R.string.more_section_appearance),
+                items = appearanceItems,
+                onItemAction = ::onItemAction,
+            )
         }
 
         item(key = "section_support") {
             MoreSectionBlock(
-                title = "Support",
+                title = stringResource(id = R.string.more_section_support),
                 items = supportItems,
                 onItemAction = ::onItemAction,
             )
@@ -256,7 +222,7 @@ fun MoreScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "Speed Meter",
+                    text = stringResource(id = R.string.more_made_with_love),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -368,63 +334,31 @@ private fun MoreListItem(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HelpFeedbackDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
-    val focusRequester = remember { FocusRequester() }
-    val dialogLabel = "Help and feedback"
 
     val appVersion = BuildConfig.VERSION_NAME
     val modelName = Build.MODEL
     val modelNumber = Build.DEVICE
     val androidVersion = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
 
-    val bugReportSubject = "[Enter A Brief Subject For The Issue]"
-    val bugReportBody = """
-Dear Developer,
-
-I would like to report an issue encountered in Speed Meter.
-Bug Summary: [Provide a short, clear description of the issue.]
-App Version: $appVersion
-Model Name: $modelName
-Model Number: $modelNumber
-Android Version: $androidVersion
-Please Explain Necessary Steps to Reproduce the Issue:
-1. Open the app
-2. Navigate to [specific screen]
-3. Tap on [button/feature]
-4. Observe the issue
-Expected Behavior: [Describe what should have happened.]
-Actual Behavior: [Describe what actually happened.]
-Frequency: [Always / Sometimes / Rarely]
-Attachments (if any): [Screenshots / Screen recording / Logs]
-
-Please let me know if any additional information is required. I would appreciate your support in resolving this issue.
-Thank you for your time and assistance.
-
-Best regards,
-[Your Name]
-    """.trimIndent()
-
-    val suggestFeatureSubject = "[Enter A Brief Subject For The Feature]"
-    val suggestFeatureBody = """
-Dear Developer,
-
-I would like to suggest a feature which would be useful for Speed Meter.
-Feature Summary: [Provide a short, clear description of the feature and how it would be useful.]
-
-Please let me know if any additional information is required.
-Thank you for your time and assistance.
-
-Best regards,
-[Your Name]
-    """.trimIndent()
+    val bugReportSubject = stringResource(id = R.string.email_bug_report_subject)
+    val bugReportBody = stringResource(
+        id = R.string.email_bug_report_body,
+        appVersion, modelName, modelNumber, androidVersion
+    )
+    val suggestFeatureSubject = stringResource(id = R.string.email_feature_subject)
+    val suggestFeatureBody = stringResource(id = R.string.email_feature_body)
+    val emailRecipient = stringResource(id = R.string.email_recipient)
+    val dialogLabel = stringResource(id = R.string.help_dialog_label)
+    val dialogTitle = stringResource(id = R.string.help_dialog_title)
+    val cancelLabel = stringResource(id = R.string.dialog_cancel)
 
     fun sendEmail(subject: String, body: String) {
         val intent = Intent(Intent.ACTION_SENDTO).apply {
             data = Uri.parse("mailto:")
-            putExtra(Intent.EXTRA_EMAIL, arrayOf("sdcgroupofficial@gmail.com"))
+            putExtra(Intent.EXTRA_EMAIL, arrayOf(emailRecipient))
             putExtra(Intent.EXTRA_SUBJECT, subject)
             putExtra(Intent.EXTRA_TEXT, body)
         }
@@ -433,99 +367,33 @@ Best regards,
         } catch (_: Exception) { }
     }
 
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-    }
-
-    BasicAlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-    ) {
-        Surface(
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .widthIn(min = 280.dp, max = 560.dp)
-                .fillMaxWidth()
-                .semantics { contentDescription = dialogLabel },
-            shape = DialogContainerShape,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shadowElevation = DialogElevation,
-            tonalElevation = 0.dp,
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.Help,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(24.dp),
+        title = dialogTitle,
+        icon = Icons.AutoMirrored.Rounded.Help,
+        dialogLabel = dialogLabel,
+        dismissButtonLabel = cancelLabel,
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                HelpActionRow(
+                    icon = Icons.Rounded.Lightbulb,
+                    label = stringResource(id = R.string.help_suggest_feature),
+                    onClick = {
+                        sendEmail(suggestFeatureSubject, suggestFeatureBody)
+                        onDismiss()
+                    },
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "How can we help?",
-                    style = DialogHeadlineTextStyle,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
+                HelpActionRow(
+                    icon = Icons.Rounded.BugReport,
+                    label = stringResource(id = R.string.help_report_bug),
+                    onClick = {
+                        sendEmail(bugReportSubject, bugReportBody)
+                        onDismiss()
+                    },
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outline,
-                    thickness = DialogDividerHeight,
-                )
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 280.dp)
-                        .verticalScroll(rememberScrollState())
-                        .padding(vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    HelpActionRow(
-                        icon = Icons.Rounded.Lightbulb,
-                        label = "Suggest a feature",
-                        onClick = {
-                            sendEmail(suggestFeatureSubject, suggestFeatureBody)
-                            onDismiss()
-                        },
-                        modifier = Modifier.focusRequester(focusRequester),
-                    )
-                    HelpActionRow(
-                        icon = Icons.Rounded.BugReport,
-                        label = "Report a bug",
-                        onClick = {
-                            sendEmail(bugReportSubject, bugReportBody)
-                            onDismiss()
-                        },
-                    )
-                }
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outline,
-                    thickness = DialogDividerHeight,
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    DialogTextButton(
-                        label = "Cancel",
-                        onClick = onDismiss,
-                    )
-                }
             }
         }
-    }
+    )
 }
 
 @Composable
@@ -580,7 +448,7 @@ private fun HelpActionRow(
         )
         Text(
             text = label,
-            style = DialogActionTextStyle,
+            style = MaterialTheme.typography.labelLarge,
             color = onContainerColor,
             modifier = Modifier.weight(1f),
         )
@@ -593,138 +461,85 @@ private fun HelpActionRow(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AboutDialog(onDismiss: () -> Unit) {
-    val focusRequester = remember { FocusRequester() }
-    val dialogLabel = "About Speed Meter"
+    val dialogLabel = stringResource(id = R.string.about_dialog_label)
+    val closeLabel = stringResource(id = R.string.dialog_close)
+    val versionText = stringResource(id = R.string.about_version, BuildConfig.VERSION_NAME)
+    val descriptionText = stringResource(id = R.string.about_description)
 
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-    }
-
-    BasicAlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-    ) {
-        Surface(
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .widthIn(min = 280.dp, max = 560.dp)
-                .fillMaxWidth()
-                .semantics { contentDescription = dialogLabel },
-            shape = DialogContainerShape,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shadowElevation = DialogElevation,
-            tonalElevation = 0.dp,
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Info,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(24.dp),
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
+        title = stringResource(id = R.string.app_name),
+        icon = Icons.Rounded.Info,
+        dialogLabel = dialogLabel,
+        confirmButtonLabel = closeLabel,
+        onConfirm = onDismiss,
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "Speed Meter",
-                    style = DialogHeadlineTextStyle,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "Version ${BuildConfig.VERSION_NAME}",
+                    text = versionText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outline,
-                    thickness = DialogDividerHeight,
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "A lightweight data transfer speed monitor for Android.",
+                    text = descriptionText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
                 )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    DialogTextButton(
-                        label = "Close",
-                        onClick = onDismiss,
-                        modifier = Modifier.focusRequester(focusRequester),
-                    )
-                }
             }
         }
-    }
+    )
 }
 
 @Composable
-private fun DialogTextButton(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+private fun ThemeDialog(
+    currentMode: ThemeMode,
+    onModeSelected: (ThemeMode) -> Unit,
+    onDismiss: () -> Unit,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-    val isFocused by interactionSource.collectIsFocusedAsState()
-    val isPressed by interactionSource.collectIsPressedAsState()
-
-    val primaryColor = MaterialTheme.colorScheme.primary
-
-    val stateLayerOpacity = when {
-        isPressed -> ActionPressedStateLayerOpacity
-        isFocused -> ActionFocusStateLayerOpacity
-        isHovered -> ActionHoverStateLayerOpacity
-        else -> 0f
-    }
-
-    val animatedStateLayerColor by animateColorAsState(
-        targetValue = primaryColor.copy(alpha = stateLayerOpacity),
-        label = "dialogActionStateLayer",
+    val dialogLabel = stringResource(id = R.string.theme_dialog_label)
+    val closeLabel = stringResource(id = R.string.dialog_close)
+    val options = listOf(
+        ThemeMode.SYSTEM to stringResource(id = R.string.more_theme_subtitle_system),
+        ThemeMode.LIGHT to stringResource(id = R.string.more_theme_subtitle_light),
+        ThemeMode.DARK to stringResource(id = R.string.more_theme_subtitle_dark),
     )
 
-    Box(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.medium)
-            .background(animatedStateLayerColor)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = ripple(bounded = true, color = primaryColor),
-                role = Role.Button,
-                onClick = onClick,
-            )
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            style = DialogActionTextStyle,
-            color = primaryColor,
-        )
-    }
+    AppAlertDialog(
+        onDismissRequest = onDismiss,
+        title = stringResource(id = R.string.more_theme_title),
+        icon = Icons.Rounded.Palette,
+        dialogLabel = dialogLabel,
+        confirmButtonLabel = closeLabel,
+        onConfirm = onDismiss,
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                options.forEach { (mode, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = mode == currentMode,
+                                role = Role.RadioButton,
+                                onClick = { onModeSelected(mode) },
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = mode == currentMode,
+                            onClick = null,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                }
+            }
+        }
+    )
 }

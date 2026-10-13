@@ -35,10 +35,15 @@ class NotificationHelper(private val context: Context) {
         }
     }
 
-    fun buildNotification(speed: Speed, iconBitmap: Bitmap): android.app.Notification {
+    fun buildNotification(
+        speed: Speed,
+        iconBitmap: Bitmap,
+        totalDataUsage: String,
+        wifiDataUsage: String
+    ): android.app.Notification {
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(IconCompat.createWithBitmap(iconBitmap))
-            .setCustomContentView(createRemoteViews(speed))
+            .setCustomContentView(createRemoteViews(speed, totalDataUsage, wifiDataUsage))
             .setOngoing(true)
             .setLocalOnly(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -47,17 +52,26 @@ class NotificationHelper(private val context: Context) {
             .build()
     }
 
-    fun notify(speed: Speed, iconBitmap: Bitmap) {
-        notificationManager.notify(NOTIFICATION_ID, buildNotification(speed, iconBitmap))
+    fun notify(speed: Speed, iconBitmap: Bitmap, totalDataUsage: String, wifiDataUsage: String) {
+        notificationManager.notify(
+            NOTIFICATION_ID,
+            buildNotification(speed, iconBitmap, totalDataUsage, wifiDataUsage)
+        )
     }
 
-    private fun createRemoteViews(speed: Speed): RemoteViews {
+    private fun createRemoteViews(
+        speed: Speed,
+        totalDataUsage: String,
+        wifiDataUsage: String
+    ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.notification_layout)
-        views.setTextViewText(R.id.speedValue, speed.total.speedValue)
-        views.setTextViewText(R.id.speedUnit, speed.total.speedUnit)
+        views.setTextViewText(R.id.notificationSpeedValue, speed.total.speedValue)
+        views.setTextViewText(R.id.notificationSpeedUnit, speed.total.speedUnit)
         views.setTextViewText(
-            R.id.speedDetails,
-            "${context.getString(R.string.download_label)}: ${speed.down.speedValue} ${speed.down.speedUnit}  " +
+            R.id.notificationText,
+            "${context.getString(R.string.data_label)}: $totalDataUsage  " +
+                "${context.getString(R.string.wifi_label)}: $wifiDataUsage  " +
+                "${context.getString(R.string.download_label)}: ${speed.down.speedValue} ${speed.down.speedUnit}  " +
                 "${context.getString(R.string.upload_label)}: ${speed.up.speedValue} ${speed.up.speedUnit}"
         )
         return views

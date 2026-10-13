@@ -35,3 +35,20 @@ fun formatSpeed(bytesPerSecond: Long): HumanSpeed {
         )
     }
 }
+
+fun formatDataUsage(bytes: Long): String {
+    val safeBytes = if (bytes < 0) 0L else bytes
+    if (safeBytes < 1024L) {
+        return String.format("%d B", safeBytes)
+    }
+    val kb = safeBytes / 1024.0
+    if (kb < 1024.0) {
+        return String.format("%.1f KB", kb)
+    }
+    val mb = kb / 1024.0
+    if (mb < 1024.0) {
+        return String.format("%.2f MiB", mb)
+    }
+    val gb = mb / 1024.0
+    return String.format("%.2f GiB", gb)
+}

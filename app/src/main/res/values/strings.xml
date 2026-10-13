@@ -5,4 +5,84 @@
     <string name="netspeed_channel_description">Shows current network speed</string>
     <string name="download_label">Down</string>
     <string name="upload_label">Up</string>
+    <string name="data_label">Data</string>
+    <string name="wifi_label">WiFi</string>
+
+    <string name="home_section_indicator">Indicator</string>
+    <string name="home_indicator_title">Enable indicator</string>
+    <string name="home_indicator_subtitle">Show NetSpeed indicator in the status bar</string>
+    <string name="home_indicator_toggle_description">Toggle NetSpeed status bar indicator</string>
+
+    <string name="more_section_general">General</string>
+    <string name="more_notification_title">Notification settings</string>
+    <string name="more_notification_subtitle">Manage NetSpeed indicator notifications</string>
+
+    <string name="more_section_appearance">Appearance</string>
+    <string name="more_theme_title">Choose theme</string>
+    <string name="more_theme_subtitle_system">System default</string>
+    <string name="more_theme_subtitle_light">Light mode</string>
+    <string name="more_theme_subtitle_dark">Dark mode</string>
+    <string name="more_theme_toggle_description">Choose app theme</string>
+
+    <string name="more_section_support">Support</string>
+    <string name="more_help_title">Help &amp; feedback</string>
+    <string name="more_help_subtitle">Suggest a feature or report a bug</string>
+    <string name="more_about_title">About</string>
+    <string name="more_about_subtitle">v%1$s</string>
+    <string name="more_made_with_love">Made with ❤️ from India by SDC Group</string>
+
+    <string name="home_nav_label">Home</string>
+    <string name="more_nav_label">More</string>
+
+    <string name="help_dialog_label">Help and feedback</string>
+    <string name="help_dialog_title">How can we help?</string>
+    <string name="help_suggest_feature">Suggest a feature</string>
+    <string name="help_report_bug">Report a bug</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_close">Close</string>
+
+    <string name="about_dialog_label">About Speed Meter</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_description">A lightweight data transfer speed monitor for Android.</string>
+
+    <string name="theme_dialog_label">Choose theme</string>
+
+    <string name="notif_settings_button">Notification settings</string>
+
+    <string name="email_bug_report_subject">[Enter A Brief Subject For The Issue]</string>
+    <string name="email_bug_report_body"><![CDATA[Dear Developer,
+
+I would like to report an issue encountered in Speed Meter.
+Bug Summary: [Provide a short, clear description of the issue.]
+App Version: %1$s
+Model Name: %2$s
+Model Number: %3$s
+Android Version: %4$s
+Please Explain Necessary Steps to Reproduce the Issue:
+1. Open the app
+2. Navigate to [specific screen]
+3. Tap on [button/feature]
+4. Observe the issue
+Expected Behavior: [Describe what should have happened.]
+Actual Behavior: [Describe what actually happened.]
+Frequency: [Always / Sometimes / Rarely]
+Attachments (if any): [Screenshots / Screen recording / Logs]
+
+Please let me know if any additional information is required. I would appreciate your support in resolving this issue.
+Thank you for your time and assistance.
+
+Best regards,
+[Your Name]]]></string>
+    <string name="email_feature_subject">[Enter A Brief Subject For The Feature]</string>
+    <string name="email_feature_body"><![CDATA[Dear Developer,
+
+I would like to suggest a feature which would be useful for Speed Meter.
+Feature Summary: [Provide a short, clear description of the feature and how it would be useful.]
+
+Please let me know if any additional information is required.
+Thank you for your time and assistance.
+
+Best regards,
+[Your Name]]]></string>
+    <string name="email_recipient">sdcgroupofficial@gmail.com</string>
 </resources>

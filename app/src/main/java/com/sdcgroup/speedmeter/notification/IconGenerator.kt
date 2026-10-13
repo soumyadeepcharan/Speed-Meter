@@ -10,7 +10,8 @@ import com.sdcgroup.speedmeter.data.HumanSpeed
 
 class IconGenerator {
 
-    private val size = 96
+    private val width = 72
+    private val height = 96
 
     private val valuePaint = Paint().apply {
         color = Color.WHITE
@@ -22,11 +23,11 @@ class IconGenerator {
     private val unitPaint = Paint().apply {
         color = Color.WHITE
         textAlign = Paint.Align.CENTER
-        typeface = Typeface.DEFAULT_BOLD
+        typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
         isAntiAlias = true
     }
 
-    private val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    private val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     private val canvas = Canvas(bitmap)
 
     fun generateIcon(speed: HumanSpeed): Bitmap {
@@ -34,14 +35,14 @@ class IconGenerator {
 
         val digitCount = speed.speedValue.length
         valuePaint.textSize = when {
-            digitCount <= 2 -> 46f
-            digitCount == 3 -> 38f
-            else -> 30f
+            digitCount <= 2 -> 60f
+            digitCount == 3 -> 48f
+            else -> 38f
         }
-        unitPaint.textSize = 20f
+        unitPaint.textSize = 28f
 
-        canvas.drawText(speed.speedValue, size / 2f, 54f, valuePaint)
-        canvas.drawText(speed.speedUnit, size / 2f, 84f, unitPaint)
+        canvas.drawText(speed.speedValue, width / 2f, 58f, valuePaint)
+        canvas.drawText(speed.speedUnit, width / 2f, 90f, unitPaint)
 
         return bitmap
     }

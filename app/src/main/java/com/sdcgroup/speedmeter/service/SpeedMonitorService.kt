@@ -3,9 +3,9 @@ package com.sdcgroup.speedmeter.service
 import android.app.Service
 import android.content.Intent
 import android.net.TrafficStats
-import android.os.Build
 import android.os.IBinder
 import com.sdcgroup.speedmeter.data.Speed
+import com.sdcgroup.speedmeter.data.formatDataUsage
 import com.sdcgroup.speedmeter.data.formatSpeed
 import com.sdcgroup.speedmeter.notification.IconGenerator
 import com.sdcgroup.speedmeter.notification.NotificationHelper
@@ -26,6 +26,10 @@ class SpeedMonitorService : Service() {
     private var lastRxBytes = 0L
     private var lastTxBytes = 0L
     private var lastTimestamp = 0L
+    private var isMonitoring = false
+
+    private var sessionStartTotalBytes = 0L
+    private var sessionStartWifiBytes = 0L
 
     override fun onCreate() {
         super.onCreate()
@@ -35,6 +39,9 @@ class SpeedMonitorService : Service() {
         lastRxBytes = TrafficStats.getTotalRxBytes()
         lastTxBytes = TrafficStats.getTotalTxBytes()
         lastTimestamp = System.currentTimeMillis()
+
+        sessionStartTotalBytes = currentTotalBytes()
+        sessionStartWifiBytes = currentWifiBytes()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -46,18 +53,52 @@ class SpeedMonitorService : Service() {
         val initialIcon = iconGenerator.generateIcon(initialSpeed.total)
         startForeground(
             NotificationHelper.NOTIFICATION_ID,
-            notificationHelper.buildNotification(initialSpeed, initialIcon)
+            notificationHelper.buildNotification(
+                initialSpeed,
+                initialIcon,
+                formatDataUsage(0L),
+                formatDataUsage(0L)
+            )
         )
 
-        scope.launch {
-            while (isActive) {
-                val speed = measureNetworkSpeed()
-                val icon = iconGenerator.generateIcon(speed.total)
-                notificationHelper.notify(speed, icon)
-                delay(1000)
+        if (!isMonitoring) {
+            isMonitoring = true
+            scope.launch {
+                while (isActive) {
+                    val speed = measureNetworkSpeed()
+                    val icon = iconGenerator.generateIcon(speed.total)
+                    val totalDataUsage = formatDataUsage(currentTotalBytes() - sessionStartTotalBytes)
+                    val wifiDataUsage = formatDataUsage(currentWifiBytes() - sessionStartWifiBytes)
+                    notificationHelper.notify(speed, icon, totalDataUsage, wifiDataUsage)
+                    delay(1000)
+                }
             }
         }
         return START_STICKY
+    }
+
+    private fun currentTotalBytes(): Long {
+        val rx = TrafficStats.getTotalRxBytes()
+        val tx = TrafficStats.getTotalTxBytes()
+        val safeRx = if (rx == TrafficStats.UNSUPPORTED.toLong()) 0L else rx
+        val safeTx = if (tx == TrafficStats.UNSUPPORTED.toLong()) 0L else tx
+        return safeRx + safeTx
+    }
+
+    private fun currentWifiBytes(): Long {
+        val mobileRx = TrafficStats.getMobileRxBytes()
+        val mobileTx = TrafficStats.getMobileTxBytes()
+        val totalRx = TrafficStats.getTotalRxBytes()
+        val totalTx = TrafficStats.getTotalTxBytes()
+
+        val safeMobileRx = if (mobileRx == TrafficStats.UNSUPPORTED.toLong()) 0L else mobileRx
+        val safeMobileTx = if (mobileTx == TrafficStats.UNSUPPORTED.toLong()) 0L else mobileTx
+        val safeTotalRx = if (totalRx == TrafficStats.UNSUPPORTED.toLong()) 0L else totalRx
+        val safeTotalTx = if (totalTx == TrafficStats.UNSUPPORTED.toLong()) 0L else totalTx
+
+        val wifiRx = (safeTotalRx - safeMobileRx).coerceAtLeast(0L)
+        val wifiTx = (safeTotalTx - safeMobileTx).coerceAtLeast(0L)
+        return wifiRx + wifiTx
     }
 
     private fun measureNetworkSpeed(): Speed {
@@ -94,6 +135,7 @@ class SpeedMonitorService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        isMonitoring = false
         scope.cancel()
     }
 }

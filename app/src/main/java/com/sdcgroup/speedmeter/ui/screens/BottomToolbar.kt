@@ -19,13 +19,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.sdcgroup.speedmeter.R
 import com.sdcgroup.speedmeter.ui.utils.WindowHeightSizeClass
 import com.sdcgroup.speedmeter.ui.utils.WindowWidthSizeClass
 import com.sdcgroup.speedmeter.ui.utils.rememberWindowSizeClass
@@ -35,6 +39,7 @@ private fun RowScope.ToolbarItem(
     icon: ImageVector,
     label: String,
     showLabel: Boolean,
+    selected: Boolean,
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -42,7 +47,9 @@ private fun RowScope.ToolbarItem(
         modifier = Modifier
             .clickable(
                 interactionSource = interactionSource,
-                indication = null,
+                indication = ripple(bounded = true),
+                role = Role.Tab,
+                onClickLabel = label,
                 onClick = onClick
             )
             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -80,6 +87,9 @@ fun SpeedMeterBottomToolbar(
         (widthSizeClass == WindowWidthSizeClass.ExtraCompact && heightSizeClass == WindowHeightSizeClass.Compact)
     )
 
+    val homeLabel = stringResource(id = R.string.home_nav_label)
+    val moreLabel = stringResource(id = R.string.more_nav_label)
+
     HorizontalFloatingToolbar(
         modifier = modifier
             .offset(y = -FloatingToolbarDefaults.ScreenOffset)
@@ -89,14 +99,16 @@ fun SpeedMeterBottomToolbar(
         content = {
             ToolbarItem(
                 icon = Icons.Filled.Home,
-                label = "Home",
+                label = homeLabel,
                 showLabel = showLabels,
+                selected = false,
                 onClick = onHomeClick
             )
             ToolbarItem(
                 icon = Icons.Filled.MoreVert,
-                label = "More",
+                label = moreLabel,
                 showLabel = showLabels,
+                selected = false,
                 onClick = onMoreClick
             )
         }
