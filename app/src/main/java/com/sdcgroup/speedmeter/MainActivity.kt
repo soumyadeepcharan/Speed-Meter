@@ -10,16 +10,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.FloatingToolbarExitDirection.Companion.Bottom
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,7 +25,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -36,8 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import com.sdcgroup.speedmeter.data.indicatorEnabledFlow
 import com.sdcgroup.speedmeter.service.SpeedMonitorService
-import com.sdcgroup.speedmeter.ui.screens.IndicatorEnableSetting
-import com.sdcgroup.speedmeter.ui.screens.SpeedMeterBottomToolbar
+import com.sdcgroup.speedmeter.ui.screens.SpeedMeterHomeMoreContent
 import com.sdcgroup.speedmeter.ui.screens.SpeedMeterTopAppBar
 import com.sdcgroup.speedmeter.ui.theme.MyComposeApplicationTheme
 
@@ -111,25 +106,14 @@ fun SpeedMeterApp() {
                 )
             }
         ) { innerPadding ->
-            Box(
+            SpeedMeterHomeMoreContent(
+                isDarkTheme = isDarkTheme,
+                onThemeToggle = { isDarkTheme = it },
+                bottomToolbarScrollBehavior = bottomToolbarScrollBehavior,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    IndicatorEnableSetting()
-                }
-
-                SpeedMeterBottomToolbar(
-                    onHomeClick = { },
-                    onMoreClick = { },
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                    scrollBehavior = bottomToolbarScrollBehavior
-                )
-            }
+            )
         }
     }
 }

@@ -78,12 +78,8 @@ android {
         applicationId = "com.sdcgroup.speedmeter"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.3.0"
-
-        vectorDrawables {
-            useSupportLibrary = true
-        }
+        versionCode = 4
+        versionName = "0.4.0"
     }
 
     compileOptions {
@@ -100,18 +96,23 @@ android {
             if (hasValidSigningProps || isCiBuild) {
                 signingConfig = signingConfigs.getByName("release")
             }
-
             isMinifyEnabled = true
-
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
+        debug {
+            isDebuggable        = true
+            isMinifyEnabled     = false
+            applicationIdSuffix = ".debug"
+        }
     }
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {
@@ -127,7 +128,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         freeCompilerArgs.addAll(
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi"
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
+            "-opt-in=androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi"
         )
     }
 }
@@ -146,10 +148,14 @@ dependencies {
     implementation(libs.androidx.foundation)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.core)
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.runtime.saveable)
     implementation(libs.collection.ktx)
     implementation(libs.kotlin.stdlib)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.compose.material3.adaptive)
+    implementation(libs.androidx.compose.material3.adaptive.layout)
+    implementation(libs.androidx.compose.material3.adaptive.navigation)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
     debugImplementation(libs.androidx.ui.tooling)

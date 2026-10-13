@@ -1,58 +1,51 @@
-# Speed Meter v0.3.0: Live Network Speed Indicator
+# Speed Meter v0.4.0: More Screen and Adaptive Layout
 
-**Speed Meter v0.3.0** is the first release that measures your network speed. It shows your live download and upload speed in your status bar and adds a switch to turn it on or off.
+**Speed Meter v0.4.0** adds a **More** screen with notification settings, a dark theme switch, Help & feedback, and an About dialog. The layout now adapts to your screen: one page at a time on phones, and Home and More side by side on tablets and foldables.
 
-> **Known issue:** If you turn the indicator off and then open the app, the indicator starts again. A fix is coming in an upcoming release.
+> **Known issue:** If you turn the speed indicator off and then open the app, the indicator may start again. A fix is planned.
 
 ---
 
 ## What's New
 
-### 📶 Live Network Speed Indicator
-- **Speed in your status bar.** A small icon shows your total network speed (download plus upload), updated every second.
-- **Download and upload.** The notification shows both speeds.
-- **Smart units.** Speeds show in **KB/s**, and switch to **MB/s** once they pass 1,024 KB/s.
-- **Runs in the background.** The indicator runs as a foreground service, so it stays visible while you use other apps.
-- **Quiet by design.** The notification is low-importance, with no sound, no vibration, and no badge. It stays on your device only.
+### ⚙️ New "More" Screen
+- **Notification settings.** Opens your phone's notification settings for Speed Meter, so you can manage the speed indicator in one tap.
+- **Dark theme switch.** Switch between light and dark appearance from the **Appearance** section. It takes effect right away.
+- **Help & feedback.** Choose one of two options:
+  - **Suggest a feature**
+  - **Report a bug**
 
-### ⚙️ Indicator Switch
-- **"Enable indicator" switch** on the main screen turns the status bar indicator on or off.
-- **Remembers your choice.** The setting is saved on your device.
-- **Haptic feedback and screen reader support.** The switch vibrates when toggled and is labelled "Toggle NetSpeed status bar indicator" for accessibility.
+  Either option opens your email app with a message ready to send to the developer. Bug reports include your app version, phone model and Android version, so you don't have to look them up.
+- **About.** Shows the app name, version, and a short description.
+- Settings are grouped into **General**, **Appearance**, and **Support** sections.
 
-### 🧭 Floating Bottom Toolbar
-- A new **floating toolbar** with **Home** and **More** buttons sits at the bottom of the screen. The buttons do nothing yet.
-- **Hides while scrolling.** It slides out of the way as you scroll down and returns when you scroll up.
-- **Adapts to small screens.** Text labels hide on very narrow screens.
+### 📱 Adaptive Layout
+- **Phones.** The screen shows one page at a time. Use the floating bottom toolbar to switch between **Home** and **More**.
+- **Tablets, foldables and large screens.** Home and More appear **side by side**, and the bottom toolbar is hidden.
+- **Rotation and resizing.** The layout adjusts when you rotate your device or resize the window.
 
-### 🔔 Notification Permission (Android 13 and newer)
-- The app asks for **notification permission** when you open it, so the indicator can appear.
-- If you deny it, the indicator will not appear until you allow notifications in your phone's settings.
-- Earlier Android versions do not need this prompt.
+### ✨ Polish
+- **Smoother app launch.** The system's blank launch preview is disabled, so the app opens more cleanly.
+- **Accessible dialogs.** Dialogs take keyboard focus when they open, have screen reader labels, and show press feedback on buttons.
 
 ---
 
 ## Under the Hood
-- Material 3 updated to **1.5.0-alpha03** (pre-release) for the floating toolbar.
-- Added **DataStore Preferences** for saving settings, plus **Lifecycle ViewModel and Runtime for Compose**, and **Kotlin Coroutines**.
-- The app declares these permissions:
-  - Foreground service (data sync)
-  - Notifications
-  - Network state
-  - Internet
-- The switch component is now reusable, with a configurable accessibility label.
+- Added the **Material 3 Adaptive** libraries (1.0.0) for the list-detail layout.
+- Added **Material Icons Extended** for the More screen icons.
+- Release builds now shrink unused resources. Debug builds install as a separate app with a `.debug` suffix.
+- Version bumped to **0.4.0**.
 
 ---
 
 ## Compatibility
 - Requires **Android 8.0 (Oreo) or newer**.
-- Release builds are signed with **v1, v2, v3, and v4** signature schemes and verified before publishing.
+- Release builds are signed with **v1, v2, v3 and v4** signature schemes.
 
 ---
 
 ## Known Notes
-- This release uses a pre-release (alpha) version of Material 3, so minor visual quirks may appear.
-- The theme toggle in the top bar is still in progress and will be added in an upcoming release.
-- The Home and More buttons are placeholders for now.
+- This release still uses a pre-release (alpha) version of Material 3, so minor visual quirks may appear.
+- The speed indicator service starts every time the app opens. If you turned the indicator off, it may reappear after a relaunch. A fix is planned.
 
 Thanks for using **Speed Meter**! 🚀
