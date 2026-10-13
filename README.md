@@ -20,7 +20,7 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 - **Quiet notification.** It makes no sound and does not vibrate. It stays on your device only.
 
 **Home screen**
-- **Enable indicator switch.** Turn the status bar indicator on or off. Your choice is saved on your phone.
+- **Enable indicator switch.** Turn the status bar indicator on or off. The indicator is **off** until you turn it on. Your choice is saved on your phone and respected every time you open the app.
 
 **More screen**
 - **Notification settings.** Opens your phone's notification settings for Speed Meter, so you can manage the indicator notification.
@@ -38,6 +38,7 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 **Look and feel**
 - **Light and dark mode.** The app follows your phone's system setting until you change it on the More screen.
 - **Wallpaper colours (Android 12 and newer).** On supported phones, the app picks its colours from your wallpaper.
+- **Standard colours on older phones.** Phones without wallpaper colours get a built-in blue colour scheme.
 - **Full-screen display.** Content runs edge to edge behind the status bar and navigation bar.
 - **Matching system bars.** The status bar and navigation bar icons switch between light and dark to suit the theme.
 - **Speedometer app icon.** The icon shows a coloured gauge with a needle.
@@ -47,12 +48,6 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 **Permissions**
 - **Notifications (Android 13 and newer).** The app asks for permission to show notifications when you open it. The indicator needs this permission. If you deny it, the indicator will not appear until you allow it in your phone's settings.
 - **Internet and network status.** Used to read your network speed. The app does not send your data anywhere.
-
----
-
-## Known Issue
-
-- **Indicator may restart after you turn it off.** If you turn the indicator off and later open Speed Meter, the indicator may start again even though the switch shows off. A fix is planned.
 
 ---
 
@@ -70,7 +65,8 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 1. Download the APK file for your device from the project's Releases page.
 2. On your Android phone, go to **Settings → Install Unknown Apps** and allow installation from your browser or file manager.
 3. Open the downloaded APK and tap **Install**.
-4. Open **Speed Meter**. If asked, allow notifications so the indicator can appear.
+4. Open **Speed Meter**. If asked, allow notifications.
+5. On the Home screen, turn on **Enable indicator** to see your speed in the status bar.
 
 ---
 

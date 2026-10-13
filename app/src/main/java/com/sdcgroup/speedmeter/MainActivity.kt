@@ -30,11 +30,13 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.sdcgroup.speedmeter.data.indicatorEnabledFlow
 import com.sdcgroup.speedmeter.service.SpeedMonitorService
 import com.sdcgroup.speedmeter.ui.screens.SpeedMeterHomeMoreContent
 import com.sdcgroup.speedmeter.ui.screens.SpeedMeterTopAppBar
 import com.sdcgroup.speedmeter.ui.theme.MyComposeApplicationTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -42,7 +44,7 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            startSpeedMonitorService()
+            startServiceIfEnabled()
         }
     }
 
@@ -56,12 +58,12 @@ class MainActivity : ComponentActivity() {
                     Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
-                startSpeedMonitorService()
+                startServiceIfEnabled()
             } else {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         } else {
-            startSpeedMonitorService()
+            startServiceIfEnabled()
         }
 
         setContent {
@@ -69,12 +71,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startSpeedMonitorService() {
-        val intent = Intent(this, SpeedMonitorService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
+    private fun startServiceIfEnabled() {
+        lifecycleScope.launch {
+            indicatorEnabledFlow(this@MainActivity).collect { isEnabled ->
+                if (isEnabled) {
+                    val intent = Intent(this@MainActivity, SpeedMonitorService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intent)
+                    } else {
+                        startService(intent)
+                    }
+                }
+            }
         }
     }
 }
@@ -89,7 +97,7 @@ fun SpeedMeterApp() {
     val bottomToolbarScrollBehavior = FloatingToolbarDefaults.exitAlwaysScrollBehavior(exitDirection = Bottom)
 
     val enabledFlow = remember { indicatorEnabledFlow(context) }
-    val indicatorEnabled by enabledFlow.collectAsState(initial = true)
+    val indicatorEnabled by enabledFlow.collectAsState(initial = false)
 
     MyComposeApplicationTheme(darkTheme = isDarkTheme) {
         Scaffold(

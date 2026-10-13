@@ -1,51 +1,38 @@
-# Speed Meter v0.4.0: More Screen and Adaptive Layout
+# Speed Meter v0.4.1: Indicator Fix and Default Change
 
-**Speed Meter v0.4.0** adds a **More** screen with notification settings, a dark theme switch, Help & feedback, and an About dialog. The layout now adapts to your screen: one page at a time on phones, and Home and More side by side on tablets and foldables.
-
-> **Known issue:** If you turn the speed indicator off and then open the app, the indicator may start again. A fix is planned.
+**Speed Meter v0.4.1** fixes a bug where the speed indicator came back after you turned it off. The indicator is now **off by default**, and the app respects your choice every time it opens.
 
 ---
 
 ## What's New
 
-### ⚙️ New "More" Screen
-- **Notification settings.** Opens your phone's notification settings for Speed Meter, so you can manage the speed indicator in one tap.
-- **Dark theme switch.** Switch between light and dark appearance from the **Appearance** section. It takes effect right away.
-- **Help & feedback.** Choose one of two options:
-  - **Suggest a feature**
-  - **Report a bug**
+### 🛠️ Fixed
+- **Indicator stays off.** If you turn off the status bar indicator, it stays off when you reopen the app.
+- **Smoother Home screen.** The "Enable indicator" switch now appears in its correct state on launch, without a brief flicker.
+- **Haptic feedback timing.** The vibration on the switch now happens right after the change.
 
-  Either option opens your email app with a message ready to send to the developer. Bug reports include your app version, phone model and Android version, so you don't have to look them up.
-- **About.** Shows the app name, version, and a short description.
-- Settings are grouped into **General**, **Appearance**, and **Support** sections.
-
-### 📱 Adaptive Layout
-- **Phones.** The screen shows one page at a time. Use the floating bottom toolbar to switch between **Home** and **More**.
-- **Tablets, foldables and large screens.** Home and More appear **side by side**, and the bottom toolbar is hidden.
-- **Rotation and resizing.** The layout adjusts when you rotate your device or resize the window.
-
-### ✨ Polish
-- **Smoother app launch.** The system's blank launch preview is disabled, so the app opens more cleanly.
-- **Accessible dialogs.** Dialogs take keyboard focus when they open, have screen reader labels, and show press feedback on buttons.
+### ⚙️ Changed
+- **Indicator is off by default.** New installs start with the indicator off. Turn on **Enable indicator** on the Home screen to show your speed in the status bar.
+- **Updated fallback colours.** On phones without wallpaper colours (and on Android 11 and older), the app uses a new built-in blue colour scheme. Android 12 and newer with wallpaper colours are unchanged.
 
 ---
 
-## Under the Hood
-- Added the **Material 3 Adaptive** libraries (1.0.0) for the list-detail layout.
-- Added **Material Icons Extended** for the More screen icons.
-- Release builds now shrink unused resources. Debug builds install as a separate app with a `.debug` suffix.
-- Version bumped to **0.4.0**.
+## Requirements
+
+- Android **8.0 (Oreo)** or higher
+- Works on phones, tablets and foldables
 
 ---
 
-## Compatibility
-- Requires **Android 8.0 (Oreo) or newer**.
-- Release builds are signed with **v1, v2, v3 and v4** signature schemes.
+## Installation
+
+1. Download the APK below for your device.
+2. On your Android phone, go to **Settings → Install Unknown Apps** and allow installation from your browser or file manager.
+3. Open the downloaded APK and tap **Install**.
+4. Open **Speed Meter**, then turn on **Enable indicator** on the Home screen.
+
+> **Upgrading from v0.4.0?** Your saved switch setting is kept. If the indicator was on, it stays on.
 
 ---
 
-## Known Notes
-- This release still uses a pre-release (alpha) version of Material 3, so minor visual quirks may appear.
-- The speed indicator service starts every time the app opens. If you turned the indicator off, it may reappear after a relaunch. A fix is planned.
-
-Thanks for using **Speed Meter**! 🚀
+**Full Changelog**: See `CHANGELOG.txt` for the tech stack and full technical details.

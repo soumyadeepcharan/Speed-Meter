@@ -22,7 +22,7 @@ fun indicatorEnabledFlow(context: Context): Flow<Boolean> =
             if (exception is IOException) emit(emptyPreferences())
             else throw exception
         }
-        .map { prefs -> prefs[INDICATOR_ENABLED_KEY] ?: true }
+        .map { prefs -> prefs[INDICATOR_ENABLED_KEY] ?: false }
 
 suspend fun setIndicatorEnabled(context: Context, enabled: Boolean) {
     context.dataStore.edit { prefs ->

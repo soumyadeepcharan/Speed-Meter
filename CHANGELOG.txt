@@ -1,8 +1,8 @@
 Speed Meter - Changelog
 =======================
 
-[0.4.0] - More Screen and Adaptive Layout (versionName 0.4.0, versionCode 4)
-----------------------------------------------------------------------------
+[0.4.1] - Indicator Fix and Default Change (versionName 0.4.1, versionCode 5)
+-----------------------------------------------------------------------------
 
 Tech Stack
 ----------
@@ -98,19 +98,29 @@ Network Speed Monitoring (service/, data/, notification/)
   the value, default bold for the unit.
 
 Settings (data/SettingsDataStore.kt)
-- DataStore Preferences named "settings", with key "indicatorEnabled"
-  (Boolean, default true).
+- DataStore Preferences named "settings", with key "indicatorEnabled".
+- Default value is false (indicator off on new installs).
 - indicatorEnabledFlow(context) exposes the setting as a Flow, with an
   IOException fallback to empty preferences.
 - setIndicatorEnabled(context, enabled) writes the setting.
 
+Service Start Logic (MainActivity.kt)
+- MainActivity requests POST_NOTIFICATIONS on API 33+ if it is not granted.
+- startServiceIfEnabled() collects indicatorEnabledFlow in lifecycleScope and
+  starts SpeedMonitorService (foreground service on API 26+) only when the
+  saved value is true. This runs after the permission check, both when the
+  permission is already granted and when the user responds to the prompt.
+- On API 26 to 32, no permission is needed, so the same check runs directly.
+
 Home Screen (ui/screens/IndicatorEnableSetting.kt)
 - IndicatorEnableSetting: a ListItem titled "Enable indicator" with the
-  supporting text "Show NetSpeed indicator in the status bar". Turning it on
-  starts SpeedMonitorService, and turning it off stops it.
+  supporting text "Show NetSpeed indicator in the status bar".
+- The list item is not drawn until the saved value has loaded, which avoids a
+  flicker of the wrong switch state on launch.
+- Turning the switch on starts SpeedMonitorService. Turning it off stops it.
 - Switch component (ui/screens/UiWidgets.kt): reusable Material 3 Switch with
-  a check icon in the thumb when checked, a LongPress haptic on toggle, and a
-  configurable contentDescription.
+  a check icon in the thumb when checked, a LongPress haptic after the state
+  changes, and a configurable contentDescription.
 
 More Screen (ui/screens/MoreScreen.kt)
 - MoreScreen: a LazyColumn with three sections.
@@ -147,9 +157,13 @@ Top Bar and Bottom Toolbar (ui/screens)
   labels hidden on ExtraCompact windows (under 300dp wide).
 
 Theming (ui/theme)
-- Color.kt: Purple, PurpleGrey and Pink palettes used as the fallback scheme.
+- ColorScheme.kt: LightColorScheme and DarkColorScheme built from the
+  md_theme_* tokens in Color.kt. Used as the fallback scheme below API 31.
+- Color.kt: Material 3 baseline palette tokens for light and dark schemes
+  (primary, secondary, tertiary, error, surface containers, outline, scrim).
 - Theme.kt: MyComposeApplicationTheme(darkTheme, dynamicColor = true).
-  - Light and dark schemes. Dynamic colour (Material You) on API 31+.
+  - Dynamic colour (Material You) on API 31+ when dynamicColor is true.
+    Otherwise, LightColorScheme or DarkColorScheme.
   - System bar icon appearance follows the theme through WindowCompat's
     insets controller.
 - Type.kt: base Typography with a bodyLarge style.
@@ -172,8 +186,23 @@ Adaptive App Icon
 - Monochrome: drawable/ic_launcher_monochrome.xml for Android 13+ themed icons.
 - Source: assets/ic_launcher.svg.
 
-Changes Since 0.3.0
+Changes Since 0.4.0
 -------------------
+- Fixed: the speed service no longer starts on launch when the indicator is
+  off. The saved setting is checked first.
+- Changed: the indicator default is now off (was on). New installs start with
+  the indicator off.
+- Fixed: the Enable indicator switch no longer shows the wrong state briefly
+  on launch.
+- Changed: the fallback colour scheme (used below API 31, or when dynamic colour
+  is off) moved from the Purple palette to the Material 3 baseline palette.
+  Colour tokens are now in Color.kt, and the schemes are in ColorScheme.kt.
+- Changed: the haptic feedback on the switch fires after the state change.
+- Version bumped to 0.4.1 (versionCode 5).
+
+[0.4.0] - More Screen and Adaptive Layout (versionName 0.4.0, versionCode 4)
+----------------------------------------------------------------------------
+
 - Added the More screen with General, Appearance, and Support sections.
 - Added the working dark theme switch on the More screen. MainActivity now
   receives the toggle state and updates the theme.
@@ -182,7 +211,7 @@ Changes Since 0.3.0
 - Added the adaptive list-detail layout: one pane on phones, two panes on
   tablets and foldables.
 - The bottom toolbar's Home and More buttons now switch between screens on
-  phones. They were placeholders in 0.3.0.
+  phones.
 - Added the Material 3 Adaptive libraries (1.0.0) and Material Icons Extended.
 - Added the ExperimentalMaterial3AdaptiveApi opt-in.
 - Added windowDisablePreview to the app themes.
@@ -237,12 +266,8 @@ Changes Since 0.3.0
 - CI workflow for debug APK builds and a release workflow for tagged builds.
 - Backup and data-extraction rules; .gitignore files.
 
-Known Limitations and Issues
-----------------------------
-- Known issue: MainActivity starts SpeedMonitorService on every launch, without
-  checking the indicatorEnabled setting. If the user turns the indicator off
-  and then opens the app, the service starts again while the switch shows off.
-  The fix is to read the saved setting before starting the service.
+Known Limitations
+-----------------
 - Material 3 1.5.0-alpha03 and Material 3 Adaptive 1.0.0 are used. The
   Material 3 alpha may show visual quirks.
 - Daily data usage tracking is not implemented.
