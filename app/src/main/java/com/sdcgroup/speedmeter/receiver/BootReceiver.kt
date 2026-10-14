@@ -4,8 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
-import com.sdcgroup.speedmeter.data.indicatorEnabledFlow
-import com.sdcgroup.speedmeter.data.quitRequestedFlow
+import com.sdcgroup.speedmeter.data.setIndicatorEnabled
+import com.sdcgroup.speedmeter.data.setQuitRequested
 import com.sdcgroup.speedmeter.data.startOnBootFlow
 import com.sdcgroup.speedmeter.service.SpeedMonitorService
 import kotlinx.coroutines.CoroutineScope
@@ -21,11 +21,11 @@ class BootReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                val quitRequested = quitRequestedFlow(context).first()
                 val startOnBoot = startOnBootFlow(context).first()
-                val indicatorEnabled = indicatorEnabledFlow(context).first()
 
-                if (!quitRequested && startOnBoot && indicatorEnabled) {
+                if (startOnBoot) {
+                    setQuitRequested(context, false)
+                    setIndicatorEnabled(context, true)
                     val serviceIntent = Intent(context, SpeedMonitorService::class.java)
                     ContextCompat.startForegroundService(context, serviceIntent)
                 }

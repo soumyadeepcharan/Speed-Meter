@@ -44,7 +44,7 @@ import com.sdcgroup.speedmeter.notification.NotificationHelper
 import com.sdcgroup.speedmeter.notification.NotificationHelper.Companion.NOTIFICATION_ID
 import com.sdcgroup.speedmeter.service.SpeedMonitorService
 import com.sdcgroup.speedmeter.ui.MyComposeApplicationTheme
-import com.sdcgroup.speedmeter.ui.SpeedMeterHomeMoreContent
+import com.sdcgroup.speedmeter.notification.SpeedMeterHomeMoreContent
 import com.sdcgroup.speedmeter.ui.SpeedMeterTopAppBar
 import android.app.NotificationManager
 import kotlinx.coroutines.flow.first

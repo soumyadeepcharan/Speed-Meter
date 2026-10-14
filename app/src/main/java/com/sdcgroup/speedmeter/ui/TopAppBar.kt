@@ -1,10 +1,15 @@
 package com.sdcgroup.speedmeter.ui
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.PowerSettingsNew
+import androidx.compose.material.icons.rounded.PowerOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
@@ -15,7 +20,7 @@ import androidx.compose.ui.res.stringResource
 import com.sdcgroup.speedmeter.R
 import com.sdcgroup.speedmeter.data.ThemeMode
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SpeedMeterTopAppBar(
     title: String,
@@ -24,17 +29,30 @@ fun SpeedMeterTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior? = null,
     modifier: Modifier = Modifier
 ) {
-    val quitDescription = stringResource(id = R.string.quit_button_description)
+    val quitLabel = stringResource(id = R.string.quit_button_label)
     key(themeMode) {
         TopAppBar(
             modifier = modifier,
             title = { Text(title) },
             actions = {
-                IconButton(onClick = onQuitClick) {
+                Button(
+                    onClick = onQuitClick,
+                    shapes = ButtonDefaults.shapes(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
+                    contentPadding = ButtonDefaults.contentPaddingFor(
+                        ButtonDefaults.MinHeight
+                    ),
+                ) {
                     Icon(
-                        imageVector = Icons.Rounded.PowerSettingsNew,
-                        contentDescription = quitDescription
+                        imageVector = Icons.Rounded.PowerOff,
+                        contentDescription = null,
+                        modifier = Modifier.size(ButtonDefaults.iconSizeFor(ButtonDefaults.MinHeight)),
                     )
+                    Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(ButtonDefaults.MinHeight)))
+                    Text(quitLabel)
                 }
             },
             scrollBehavior = scrollBehavior

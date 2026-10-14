@@ -1,455 +1,276 @@
-Speed Meter - Changelog
-=======================
+Speed Meter - Changelog & Technical Documentation
+===================================================
 
-[0.8.1] - Start on Boot, Quit, Icon Speed Choice (versionName 0.8.1, versionCode 11)
------------------------------------------------------------------------------------
+[Version 1.0.0] - Current Release (versionName 1.0.0, versionCode 12)
+-----------------------------------------------------------------------
 
-Tech Stack
-----------
-- Language:             Kotlin 2.1.20
-- UI Toolkit:           Jetpack Compose with Material 3 1.5.0-alpha03
-                        (pre-release)
-- Adaptive libraries:   Material 3 Adaptive 1.0.0 (adaptive, adaptive-layout,
-                        adaptive-navigation). Declared in the build but not
-                        used by the app code.
-- Compose BOM:          2026.02.01
-- Build System:         Gradle (Kotlin DSL), Android Gradle Plugin 8.11.0
-- Compose Compiler:     Kotlin Compose compiler plugin (2.1.20)
-- Android Min SDK:      26 (Android 8.0 Oreo)
-- Android Target SDK:   36
-- Android Compile SDK:  36
-- JVM Target:           17 (set explicitly for Java and Kotlin compilation)
-- Opt-in:               ExperimentalMaterial3Api,
-                        ExperimentalMaterial3ExpressiveApi,
-                        ExperimentalMaterial3AdaptiveApi
-- Coroutines:           kotlinx-coroutines-android 1.9.0 (declared directly in
-                        app/build.gradle.kts, not in the version catalog)
-- Persistence:          DataStore Preferences 1.1.1
-- Icons:                material-icons-core and material-icons-extended (BOM
-                        managed)
-- AndroidX Libraries:   core-ktx 1.16.0, lifecycle-runtime-ktx 2.9.0,
-                        lifecycle-viewmodel-compose 2.9.0,
-                        lifecycle-runtime-compose 2.9.0,
-                        activity-compose 1.10.1, collection-ktx 1.4.5
-- Compose Libraries:    foundation, material-icons-core, material-icons-extended,
-                        material3, runtime-saveable, ui, ui-graphics,
-                        ui-tooling-preview
-- Platform APIs:        TrafficStats, NetworkStatsManager, NetworkInterface,
-                        AppOpsManager (checkOpNoThrow for usage access),
-                        PowerManager (battery optimization status),
-                        ConnectivityManager network type constants,
-                        ActivityResultContracts.RequestPermission,
-                        BroadcastReceiver (BOOT_COMPLETED), goAsync()
-- Package/Namespace:    com.sdcgroup.speedmeter
-- CI (ci.yml):          GitHub Actions. Builds a debug APK on push and pull
-                        requests to main, signs it with v1/v2/v3/v4 schemes,
-                        and verifies the signatures.
-- Release (release.yml): GitHub Actions. Runs on tags matching v*. Builds a
-                        release APK, signs it with v1/v2/v3/v4 schemes,
-                        verifies it with apksigner (--print-certs), publishes
-                        it to a GitHub Release, and deletes the keystore after
-                        signing.
-- Actions versions:     checkout v6, setup-java v6, setup-gradle v6,
-                        upload-artifact v7, action-gh-release v3
-
-Build Configuration
--------------------
-- Release build: R8/ProGuard minification (proguard-android-optimize.txt plus
-  proguard-rules.pro) and resource shrinking (isShrinkResources = true).
-- proguard-rules.pro (rewritten in 0.8.1):
-  - Keeps annotations, Signature, InnerClasses and EnclosingMethod attributes.
-  - Keeps kotlin.coroutines.Continuation and kotlinx.coroutines volatile fields.
-  - Keeps androidx.datastore classes.
-  - Keeps the Speed and HumanSpeed data classes.
-  - Keeps the R$id and R$layout classes.
-  - Keeps MainActivity and SpeedMonitorService.
-  - Keeps SourceFile and LineNumberTable, and renames the source file attribute.
-  - Uses -repackageclasses '' and -allowaccessmodification.
-- Packaging (0.8.1): resource excludes for META-INF/*.version,
-  META-INF/proguard/**, META-INF/*.kotlin_module, kotlin/**, and
-  DebugProbesKt.bin.
-- Split bundles (0.8.1): language, density and ABI splits are enabled for
-  Android App Bundle builds.
-- Debug build: debuggable, no minification, applicationIdSuffix ".debug" so it
-  installs alongside the release build.
-- Release signing reads storeFile, storePassword, keyAlias, and keyPassword
-  from release.properties when present. CI reads them from environment
-  variables instead.
-- Lint checks on release builds are disabled (checkReleaseBuilds = false).
-- BuildConfig generation enabled (used for the version name in the More section).
-- AndroidX enabled; non-transitive R class enabled; Gradle configuration
-  cache enabled.
-- .gitignore excludes *.jks, *.keystore, keystore.base64, and release.properties.
-
-Manifest
+OVERVIEW
 --------
-- Permissions:
-  - android.permission.INTERNET
-  - android.permission.ACCESS_NETWORK_STATE
-  - android.permission.FOREGROUND_SERVICE
-  - android.permission.FOREGROUND_SERVICE_DATA_SYNC
-  - android.permission.POST_NOTIFICATIONS (requested at runtime on API 33+)
-  - android.permission.RECEIVE_BOOT_COMPLETED (added in 0.8.1)
-  - android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (added in 0.8.1)
-  - android.permission.PACKAGE_USAGE_STATS (special access, granted by the user
-    in Settings → Usage access; marked tools:ignore="ProtectedPermissions")
-- Activity: MainActivity, exported = true, screenOrientation = sensor,
-  windowSoftInputMode = adjustResize.
-- Service: SpeedMonitorService, exported = false,
-  foregroundServiceType = dataSync.
-- Receiver: BootReceiver (com.sdcgroup.speedmeter.receiver), exported = true,
-  filter android.intent.action.BOOT_COMPLETED (added in 0.8.1).
-- allowBackup = true, with backup_rules.xml and data_extraction_rules.xml.
-- Theme (values/ and values-night/): windowDisablePreview = true, transparent
-  status and navigation bars.
+Speed Meter is a lightweight, real-time network speed monitor for Android,
+built with Kotlin and Jetpack Compose (Material 3 Expressive). It runs as a
+foreground service that keeps one status bar notification line up to date
+with live download and upload speed and today's data usage.
 
-Source Layout
+
+TECHNOLOGY STACK
+-----------------
+
+Language & Platform:
+  • Kotlin 2.1.20
+  • Android minSdk 26 (Oreo), targetSdk and compileSdk 36
+  • Java compatibility and JVM target: 17
+  • Package: com.sdcgroup.speedmeter
+
+UI:
+  • Jetpack Compose with Material 3 (Compose BOM 2026.02.01,
+    material3 1.5.0-alpha03)
+  • Opt-in APIs: ExperimentalMaterial3Api, ExperimentalMaterial3ExpressiveApi
+  • Material 3 Expressive animated-shape buttons (ButtonDefaults.shapes())
+    on the Kill Service button and dialog confirm buttons
+  • Material Icons (core and extended)
+  • Custom components: gesture-driven Switch (thumb follows the finger, with
+    a cross-fade between check and close icons), scrollable AppAlertDialog,
+    and WindowSizeClass-based responsive layout
+  • Dynamic Color (Material You) on Android 12+, with static light and dark
+    fallback schemes
+  • Bottom sheet drag handle (BottomSheetDefaults.DragHandle()), with sheet
+    height that accounts for the status bar
+  • Orientation follows the system rotation lock (screenOrientation="user")
+
+State & Data:
+  • Jetpack DataStore Preferences for all settings and daily-usage baselines
+  • Kotlin Coroutines and Flow for async work and reactive state
+  • rememberSaveable for dialog and UI state across configuration changes
+
+System Integration:
+  • TrafficStats API: real-time speed from byte-counter deltas
+  • NetworkStatsManager: per-day mobile and WiFi totals. Falls back to a
+    TrafficStats-based daily baseline when Usage Access isn't granted.
+  • Foreground service (dataSync type) with a RemoteViews notification
+  • BroadcastReceiver for BOOT_COMPLETED (optional auto-start)
+  • AppOpsManager.checkOpNoThrow for Usage Access checks
+  • PowerManager for battery optimization status
+  • Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS to request the
+    exemption. Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS opens
+    the system exemption list so the user can revoke it. Android has no API
+    for an app to revoke its own exemption, so this is a deep link, not a
+    one-tap action.
+  • androidx.lifecycle.compose.LocalLifecycleOwner
+
+Build System:
+  • Android Gradle Plugin 8.11.0 via Kotlin DSL; Gradle wrapper 8.14.3
+  • Version catalog: gradle/libs.versions.toml
+  • R8/ProGuard minification and resource shrinking for release builds
+  • Conditional release signing from release.properties (git-ignored)
+
+
+FEATURES TO DATE
+-----------------
+
+✅ Real-Time Speed Monitoring
+  • Download and upload speed from TrafficStats deltas, once per second
+  • Total speed = download + upload
+  • Handles TrafficStats.UNSUPPORTED and negative or decreasing counters
+  • Display unit: bytes per second (B/s to GB/s) or bits per second
+    (b/s to Gb/s), via the shared scaledMagnitude() helper with
+    boundary-safe rounding (e.g. 999.99 KB/s doesn't roll into a wrong unit)
+  • Below 1 MB/s or 1 Mb/s, values show as integers. Data and WiFi usage
+    always show up to two decimal places.
+
+✅ Persistent Status Bar Notification
+  • One non-expandable line: Down, Up, Data, WiFi, from a custom RemoteViews
+    layout (notification_layout.xml)
+  • Each field is a weighted column (layout_weight = 1) with adaptive text
+    (uniform autosize, 13sp max down to 7sp min, 1sp steps) and no extra
+    font padding, so long values shrink instead of being cut off
+  • Status bar icon: 192×192 ARGB bitmap (IconGenerator), with auto-shrink
+    digit sizing and spacing measured from glyph bounds (getTextBounds())
+  • Icon speed source is user-selectable: total, download only, or upload
+    only (IconSpeedType)
+  • Low-priority, local-only, "only alert once" notification
+  • Notification channel is created once and reused across restarts
+
+✅ Daily Data Usage Tracking
+  • Midnight-to-now totals, not session-based accumulation
+  • Primary path: NetworkStatsManager.querySummaryForDevice() for mobile
+    (type 0) and WiFi (type 1), from start of day to now
+  • Fallback (no Usage Access): TrafficStats daily baseline, stored in
+    DataStore and reset at the start of each day
+  • WiFi bytes come from the "wlan" interface; mobile = total − WiFi
+  • Display unit: bits (decimal), bytes (decimal kB/MB/GB), or bytes
+    (binary KiB/MiB/GiB), via the same scaledMagnitude() helper
+
+✅ Indicator Enable/Disable
+  • One home screen toggle starts and stops the foreground service
+  • Custom Switch with live thumb tracking during drag (awaitEachGesture),
+    not just tap-to-toggle
+  • Off by default on first install
+  • POST_NOTIFICATIONS requested only when enabling (API 33+)
+  • Kill Service button in the top app bar: filled icon-and-label button in
+    the error color (PowerOff icon, shape-animated). It stops the service,
+    cancels the notification, and ends the process.
+
+✅ Settings Screen (single scrollable column)
+  • Notification settings
+    - Opens Android's per-app notification settings
+    - Speed units (Bytes/sec or Bits/sec)
+    - Data usage units (Bits decimal, Bytes decimal, Bytes binary)
+    - Speed shown in the indicator icon (Total, Download, Upload)
+  • Notification layout
+    - Usage access: opens ACTION_USAGE_ACCESS_SETTINGS. Shown as a live
+      Switch that reflects the real grant state, rechecked on every resume
+      through a DisposableEffect lifecycle observer.
+  • General
+    - Theme (System, Light, Dark)
+    - Start on boot toggle (persisted; read by BootReceiver)
+    - Battery optimization toggle. Turning it on opens
+      ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS. Turning it off opens
+      ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS so the user can restore
+      optimization. State is rechecked on every resume.
+  • Support
+    - Help & feedback bottom sheet: "Suggest a feature" and "Report a bug".
+      Both open a pre-filled email. Bug reports include app version, device
+      model, device name, and Android version.
+    - About dialog with app version
+  • Option rows are clipped to MaterialTheme.shapes.extraLarge so ripples
+    follow the rounded design
+
+✅ Theming
+  • Material 3 light and dark schemes with Material You dynamic color on
+    Android 12+
+  • Theme state comes from one collector; key(themeMode) on the top app bar
+    avoids visible lag when switching themes
+  • Status and navigation bar icon appearance follows the active theme
+
+✅ Responsive Layout
+  • WindowWidthSizeClass and WindowHeightSizeClass (ExtraCompact through
+    ExtraLarge), with per-class defaults in WindowSizeDefaults
+  • Settings dialogs scroll internally (ScrollableDialogContent, capped at
+    50% of screen height), so they fit any window size
+  • rememberSaveable keeps dialog state across rotation
+
+✅ Permissions & Background Reliability
+  • Runtime POST_NOTIFICATIONS request (API 33+); no-op on older versions
+  • Usage Access flow with live status refresh on resume
+  • Battery optimization flow with live status refresh on resume, plus a
+    path to reopen the exemption list to reverse it
+  • BootReceiver: if "Start on boot" is on, clears the quit flag, turns the
+    indicator on, and starts the foreground service after a device boot,
+    even if the user quit or turned the indicator off before shutdown
+  • START_STICKY restart policy. SupervisorJob-scoped coroutines are
+    cancelled in onDestroy.
+
+
+ARCHITECTURE
 -------------
-- com.sdcgroup.speedmeter
-  - MainActivity.kt: launch logic, the quitApp() function, theme, speed unit, and
-    data unit state, and the top-level Scaffold.
-  - data/: SettingsDataStore.kt (DataStore keys, enums, daily baseline, quit
-    and boot flags), Speed.kt (formatSpeed, formatDataUsage).
-  - receiver/: BootReceiver.kt (added in 0.8.1).
-  - service/: SpeedMonitorService.kt.
-  - notification/: NotificationHelper.kt, IconGenerator.kt.
-  - ui/: Color.kt, Theme.kt, Type.kt, TopAppBar.kt (with the quit button),
-    HomeScreen.kt (Home section, More sections, sheets and dialogs),
-    UiWidgets.kt (custom Switch, AppAlertDialog), WindowSizeClass.kt,
-    WindowSizeDefaults.kt.
-- res/layout/notification_layout.xml: a horizontal row of four equal-weight
-  text fields.
-- res/drawable/ic_settings_black_24dp.xml: hidden icon in the notification layout.
 
-Features Implemented
---------------------
-Network Speed (service/, data/, notification/)
-- SpeedMonitorService: foreground service (START_STICKY). One monitoring
-  coroutine (guarded by isMonitoring) samples TrafficStats every 1 second on
-  Dispatchers.Default. It computes download and upload bytes per second from
-  the deltas and the elapsed time. Counters that report UNSUPPORTED or fall are
-  treated as zero.
-- Icon speed type (added in 0.8.1): the status bar icon shows the total,
-  download, or upload speed. Stored as iconSpeedType (Int 0, 1, or 2). The
-  service collects this value and applies it on the next tick.
-- Speed units (data/Speed.kt, formatSpeed):
-  - BYTES_PER_SECOND (default): B/s, KB/s, MB/s, GB/s with base 1024.
-  - BITS_PER_SECOND: b/s, Kb/s, Mb/s, Gb/s with base 1000, from bytes × 8.
-  - Speed values use 0 decimals for the first two units and 1 decimal above that.
-- Speed unit is stored as speedUnit (Int 0 or 1).
+Single-Activity, Service-Backed:
+  • MainActivity: single entry point. Hosts the Compose UI and handles
+    initial permission and service bootstrap.
+  • SpeedMonitorService: foreground service that owns the monitoring loop,
+    independent of the UI lifecycle
+  • NotificationHelper: channel creation and RemoteViews notification
+  • IconGenerator: 192×192 bitmap status bar icon
 
-Daily Data Usage (service/SpeedMonitorService.kt, data/SettingsDataStore.kt)
-- Totals are for the current local day, from midnight.
-- With Usage access granted (AppOpsManager.checkOpNoThrow with
-  OPSTR_GET_USAGE_STATS = MODE_ALLOWED):
-  - Mobile total = NetworkStatsManager.querySummaryForDevice(type 0) from
-    midnight to now, RX plus TX.
-  - Wi-Fi total = the same query with type 1.
-- Without Usage access (fallback):
-  - A daily baseline (date, total bytes, Wi-Fi bytes) is stored in DataStore.
-  - Totals are the current counters minus the baseline, floored at zero.
-  - The baseline resets when the date changes.
-  - Total device counters come from TrafficStats total minus Wi-Fi counters.
-  - Wi-Fi counters come from TrafficStats.getRxBytes/getTxBytes on the first
-    interface whose name starts with "wlan". If none exists, Wi-Fi is 0.
-- Data usage unit is stored as dataUnit (Int 0, 1, or 2):
-  - BITS_DECIMAL: b, Kb, Mb, Gb, Tb (base 1000, from bytes × 8).
-  - BYTES_DECIMAL: B, kB, MB, GB, TB (base 1000).
-  - BYTES_BINARY (default): B, KiB, MiB, GiB, TiB (base 1024).
-- Data usage values use 0 decimals for the byte unit and 2 decimals above it.
+Data Flow:
+  TrafficStats (deltas) → speed calculation → formatSpeed() → notification
+  NetworkStatsManager or TrafficStats baseline → getTodayUsage() →
+  formatDataUsage() → notification
+  DataStore Flows → service and UI state (speed unit, data unit, icon type,
+  indicator enabled, start on boot, quit requested, daily baseline)
 
-Settings (data/SettingsDataStore.kt)
-- DataStore Preferences named "settings".
-- indicatorEnabled (Boolean, default false).
-- themeMode (Int, default 0 = SYSTEM): SYSTEM(0), LIGHT(1), DARK(2).
-- speedUnit (Int, default 0): BYTES_PER_SECOND(0), BITS_PER_SECOND(1).
-- dataUnit (Int, default 2): BITS_DECIMAL(0), BYTES_DECIMAL(1), BYTES_BINARY(2).
-- iconSpeedType (Int, default 0): TOTAL(0), DOWNLOAD(1), UPLOAD(2). New in 0.8.1.
-- startOnBoot (Boolean, default false). New in 0.8.1.
-- quitRequested (Boolean, default false). New in 0.8.1.
-- dailyUsageDate (String), dailyDataBaseline (Long), dailyWifiBaseline (Long).
-- Each enum has fromStorageValue(), which falls back to its default for unknown
-  values.
-- All flows fall back to empty preferences on IOException.
+State Management:
+  • DataStore Preferences is the single source of truth for settings
+  • Flow.collect in the service applies setting changes without restarting
+    monitoring
+  • Compose collectAsState and rememberSaveable for UI state
 
-Quit (MainActivity.kt, ui/TopAppBar.kt) - new in 0.8.1
-- The power icon in the top bar calls quitApp(), which:
-  1. Sets indicatorEnabled to false and quitRequested to true (runBlocking).
-  2. Sends SpeedMonitorService the ACTION_QUIT intent, which removes the
-     foreground notification and stops the service.
-  3. Cancels notification ID 1001.
-  4. Calls finishAffinity() and Process.killProcess(myPid()).
-- At the next launch, MainActivity sees quitRequested, clears it, and does not
-  start the service. The indicator then stays off until the user turns it on.
 
-Startup and Permission Flow (MainActivity.kt, ui/HomeScreen.kt, receiver/BootReceiver.kt)
-- MainActivity creates the notification channel on every launch (new in 0.8.1).
-- On launch:
-  - If quitRequested is true, it is cleared and the service is not started.
-  - If indicatorEnabled is false, nothing else happens.
-  - Otherwise, on Android 13 and newer, the service starts if POST_NOTIFICATIONS
-    is granted, or the permission prompt appears if it is not. On Android 8 to
-    12, the service starts directly.
-- Turning the Home switch on (HomeScreen.toggle): on Android 13 and newer without
-  POST_NOTIFICATIONS, the prompt appears. If granted, the service starts and the
-  setting is saved as on. If denied, the setting stays off. Otherwise the service
-  starts and the setting is saved as on.
-- Turning the switch off stops the service and saves the setting as off.
+FILE STRUCTURE
+---------------
 
-Boot Receiver (receiver/BootReceiver.kt) - new in 0.8.1
-- Listens for android.intent.action.BOOT_COMPLETED only.
-- Uses goAsync() and a Dispatchers.Default coroutine.
-- Starts SpeedMonitorService as a foreground service only when all three are true:
-  quitRequested is false, startOnBoot is true, and indicatorEnabled is true.
-- The receiver does not request notification permission. If the app has not been
-  granted it, the service still starts but the notification may not be shown.
+app/src/main/java/com/sdcgroup/speedmeter/
+├── MainActivity.kt             — entry point, permission bootstrap, app shell
+├── service/
+│   ├── SpeedMonitorService.kt  — foreground service: speed and usage loop
+│   ├── General.kt              — General settings (theme, start on boot,
+│   │                              battery optimization)
+│   └── Support.kt              — Support settings (help and feedback, about)
+├── notification/
+│   ├── NotificationHelper.kt   — channel and RemoteViews notification builder
+│   ├── NotificationLayout.kt   — notification layout definitions
+│   ├── NotificationSettings.kt — Notification settings section and dialogs
+│   ├── Indicator.kt            — home indicator toggle and permission checks
+│   │                              (isUsageAccessGranted,
+│   │                              isBatteryOptimizationDisabled)
+│   └── IconGenerator.kt        — 192×192 status bar icon bitmap
+├── receiver/
+│   └── BootReceiver.kt         — auto-start on device boot
+├── data/
+│   ├── Speed.kt                — HumanSpeed and Speed models, unit formatting
+│   └── SettingsDataStore.kt    — DataStore keys, flows, enums (ThemeMode,
+│                                  SpeedUnit, DataUnit, IconSpeedType)
+└── ui/
+    ├── TopAppBar.kt            — top app bar with Kill Service action
+    ├── UiWidgets.kt            — custom Switch, AppAlertDialog, bottom sheet
+    │                              and Help & feedback sheet
+    ├── Theme.kt / Color.kt / Type.kt — Material 3 theming
+    └── WindowSizeClass.kt / WindowSizeDefaults.kt — responsive layout
 
-Notification (notification/NotificationHelper.kt, res/layout/notification_layout.xml)
-- Channel "netspeed_channel", named "Speed Meter" (IMPORTANCE_LOW, no badge).
-- Ongoing, local-only, low-priority notification, Notification ID 1001.
-- A new RemoteViews is created for each update. (0.8.0 reused one instance;
-  0.8.1 reverted this.)
-- Custom content view: a horizontal row of four text fields with equal weight
-  (layout_weight 1), single line, ellipsised. Text: "Down: <value><unit>",
-  "Up: <value><unit>", "Data: <value>", and "WiFi: <value>".
-- The status bar icon shows the speed chosen in iconSpeedType.
+Removed in 1.0.0: ui/HomeScreen.kt (its contents moved to the files above).
 
-Status Bar Icon (notification/IconGenerator.kt)
-- 192 x 192 transparent bitmap, created for each icon (new in 0.8.1; 0.8.0 used a
-  96 x 96 bitmap). It is drawn at twice the earlier resolution.
-- Speed value: sans-serif-condensed bold, 130px, textScaleX 0.98, letterSpacing
-  -0.08, centred at x = 96, baseline y = 104.
-- Unit text: sans-serif-condensed bold, 80px, textScaleX 1, letterSpacing
-  -0.05, centred at x = 96, baseline y = 190.
-- The text is not auto-sized. Very long values may be clipped.
 
-Home Section (ui/HomeScreen.kt, HomeScreen)
-- A card (surfaceContainer, extraLarge shape) with a NetworkCheck icon, the
-  title "Enable indicator", the subtitle "Show network speed in the status bar",
-  and the custom Switch.
-- The whole row toggles the setting (Role.Switch).
-- The row is not drawn until the saved value has loaded.
-
-More Section (ui/HomeScreen.kt, MoreScreen)
-- Sections, in order:
-  1. Notification settings
-     - Notification settings: opens Settings.ACTION_APP_NOTIFICATION_SETTINGS.
-     - Speed to show in indicator icon (new in 0.8.1): opens
-       IconSpeedTypeDialog, with the current value as the subtitle.
-     - Speed units: opens SpeedUnitDialog.
-     - Data usage units: opens DataUnitDialog.
-  2. Notification layout
-     - Usage access: a switch row. The switch shows the current grant state.
-       Tapping the row, or the switch, opens ACTION_USAGE_ACCESS_SETTINGS.
-       The state is checked on first display and on each ON_RESUME.
-  3. General
-     - Choose theme: opens ThemeDialog.
-     - Start on boot (new in 0.8.1): a switch row. Tapping it saves the new value
-       through setStartOnBoot. The subtitle says whether the indicator will start
-       on boot.
-     - Disable battery optimizations (new in 0.8.1): a switch row showing the
-       battery optimization state. The switch is on while optimization still
-       applies. Tapping it opens ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS when
-       optimization is on. The state is checked on each ON_RESUME.
-  4. Support
-     - Help & feedback: opens HelpFeedbackBottomSheet.
-     - About: opens AboutDialog.
-  5. Footer: "Made with ❤️ from India by SDC Group".
-- Help & feedback sheet (HelpFeedbackBottomSheet):
-  - A ModalBottomSheet with a transparent drag handle, skipPartiallyExpanded =
-    true, and a body height of 40% of the screen height, minus the status bar
-    (changed in 0.8.1 from 30%).
-  - Two rows: "Suggest a feature" and "Report a bug". Each opens an ACTION_SENDTO
-    intent to sdcgroupofficial@gmail.com with a prefilled subject and body from
-    strings.xml. The bug report template includes the app version, device model
-    (Build.MODEL), device name (Build.DEVICE), and Android version and API level.
-  - Choosing a row closes the sheet.
-- Dialogs are AppAlertDialog instances with radio-style options in a
-  selectableGroup. Option rows are clipped to MaterialTheme.shapes.extraLarge.
-- Dialog state uses rememberSaveable, so dialogs survive rotation.
-- The page is one verticalScroll Column in SpeedMeterHomeMoreContent.
-
-Custom Switch (ui/UiWidgets.kt)
-- Track 52 x 32 dp, thumb 24 dp with 4 dp padding.
-- Tap toggles. A horizontal drag moves the thumb. Release snaps to on or off,
-  using the midpoint, or toggles on a tap.
-- The thumb shows a Close icon when off and a Check icon when on. The icons
-  cross-fade as the thumb moves past the midpoint.
-- Thumb movement and colour changes use spring animations with StiffnessHigh.
-- Haptic feedback on release.
-- Role.Switch and a configurable contentDescription.
-
-Dialogs (ui/UiWidgets.kt)
-- AppAlertDialog uses DialogProperties(decorFitsSystemWindows = true), so
-  dialogs stay inside system bars.
-- AppAlertDialog content is wrapped in ScrollableDialogContent, which limits
-  height to 50% of the screen and scrolls.
-
-Top Bar (ui/TopAppBar.kt)
-- SpeedMeterTopAppBar takes themeMode and onQuitClick. It redraws when the theme
-  changes (key(themeMode)).
-- An action button with the PowerSettingsNew icon, labelled "Quit" for screen
-  readers (new in 0.8.1).
-- Pinned scroll behaviour.
-
-Theming (ui/)
-- Color.kt: Material 3 baseline palette tokens, LightColorScheme, DarkColorScheme.
-- Theme.kt: MyComposeApplicationTheme(themeMode, dynamicColor = true).
-  - Dynamic colour (Material You) on API 31+ when dynamicColor is true.
-  - System bar icon appearance follows the resolved theme.
-
-Layout Utilities (ui/)
-- WindowSizeClass.kt and WindowSizeDefaults.kt: width and height size classes
-  with remember-based helpers.
-
-Adaptive App Icon
-- Launcher icon in mipmap-anydpi-v26 and mipmap-anydpi-v33 (standard and round).
-- Background: drawable/ and drawable-night/ ic_launcher_background.xml.
-- Foreground: drawable/, drawable-v24/, drawable-night/, and
-  drawable-night-v24/ ic_launcher_foreground.xml. Design: a 7-segment coloured
-  circular gauge arc with a needle group.
-- Monochrome: drawable/ic_launcher_monochrome.xml for Android 13+ themed icons.
-- Source: assets/ic_launcher.svg.
-
-Changes Since 0.8.0
+KNOWN LIMITATIONS
 -------------------
-- Added Start on boot with a BootReceiver. It starts the indicator after a
-  restart only when the indicator is on and the app was not quit.
-- Added the Quit button to the top bar. It turns the indicator off, removes the
-  notification, and closes the app.
-- Added the Speed to show in indicator icon option (total, download, or upload).
-- Added the Disable battery optimizations shortcut, with a switch that reflects
-  the current state.
-- Added RECEIVE_BOOT_COMPLETED and REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
-  permissions.
-- Added the notification channel creation to MainActivity, so the channel exists
-  on launch.
-- Changed the status bar icon to 192 x 192, with larger text.
-- Changed the notification fields to equal-weight columns instead of fixed widths.
-- Changed the RemoteViews handling: a new view is created for each update. This
-  reverts the 0.8.0 reuse.
-- Changed the Help & feedback sheet height to 40% of the screen, and made its
-  drag handle transparent.
-- Changed startup: MainActivity checks quitRequested before indicatorEnabled.
-- Changed the release build: added proguard rules, resource excludes, and split
-  bundle settings.
-- Version bumped to 0.8.1 (versionCode 11).
+• Speed reflects system-wide TrafficStats, not per-app traffic
+• Without Usage Access, daily usage is an estimate from a stored baseline,
+  not full system accounting
+• Only "today" totals. No history or graphs.
+• The live speed doesn't show network type (WiFi or mobile)
+• No speed thresholds or alerts
+• Turning battery optimization back on needs the user to find the app in
+  the system exemption list and toggle it. Android has no API for an app to
+  revoke its own exemption in one tap.
+• Pre-release Material 3 (1.5.0-alpha03): minor visual quirks may appear
 
-Known Limitations and Issues
-----------------------------
-- Quit uses Process.killProcess after writing two settings on the main thread
-  with runBlocking. This can cause a brief UI pause, and the app is terminated
-  rather than closed cleanly. Move the writes to a background scope.
-- The resource excludes for kotlin/** and *.kotlin_module may affect code that
-  uses reflection. Test a signed release build before publishing.
-- The battery optimization switch is on when optimization still applies. Some
-  manufacturers add their own background restrictions beyond this setting.
-- Start on boot does not request notification permission. If it has not been
-  granted, the service starts without a visible notification.
-- Without Usage access, daily totals are estimated from device counters since
-  the day's first run. They can read lower after a phone restart.
-- The Wi-Fi fallback needs an interface named "wlan*". On devices that use
-  another name, Wi-Fi shows 0 until Usage access is granted.
-- With Usage access, figures come from Android's usage records and can lag a
-  few minutes behind real time.
-- The status bar icon does not shrink long text. Very long values may be clipped.
-- The notification's equal-weight fields may truncate long values on narrow
-  screens.
-- A duplicate import of graphicsLayer in HomeScreen.kt may produce a build
-  warning. Remove the duplicate.
-- No usage history, speed history, or speedometer gauge.
-- Material 3 1.5.0-alpha03 is a pre-release and may show visual quirks.
-- The Material 3 Adaptive libraries are still declared but not used.
-- No unit or instrumented tests.
-- No animated launcher icon (the animated drawable is not in this build).
 
-[0.8.0] - Permission on Enable, Fixed Icon Layout, Help Sheet (versionName 0.8.0, versionCode 10)
---------------------------------------------------------------------------------------------------
+DEPENDENCIES
+-------------
+  • androidx.core:core-ktx 1.16.0
+  • androidx.lifecycle: runtime-ktx, viewmodel-compose, runtime-compose 2.9.0
+  • androidx.activity:activity-compose 1.10.1
+  • androidx.compose:compose-bom 2026.02.01
+  • androidx.compose.material3:material3 1.5.0-alpha03
+  • androidx.compose.material: material-icons-core and extended
+  • androidx.compose.runtime:runtime-saveable
+  • androidx.compose.material3.adaptive: adaptive, adaptive-layout,
+    adaptive-navigation 1.0.0
+  • androidx.datastore:datastore-preferences 1.1.1
+  • androidx.collection:collection-ktx 1.4.5
+  • org.jetbrains.kotlin:kotlin-stdlib 2.1.20
+  • org.jetbrains.kotlinx:kotlinx-coroutines-android 1.9.0
 
-- Notification permission is requested when the Home switch is turned on, and
-  not on every launch.
-- Changed the status bar icon to a fixed 96 x 96 layout with fixed text
-  positions.
-- Changed the notification to a horizontal row of four fixed-width fields.
-- Changed Help & feedback from a dialog to a bottom sheet.
-- Changed the switch spring stiffness to StiffnessHigh.
-- Changed AppAlertDialog to keep dialogs inside the system bars.
-- Restored the keystore rules in .gitignore.
 
-[0.7.1] - Usage Access Switch and Display Polish (versionName 0.7.1, versionCode 9)
------------------------------------------------------------------------------------
+BUILD & RELEASE
+-----------------
+Debug build:
+  ./gradlew assembleDebug
 
-- Added a switch to the Usage access row. It refreshes when the screen resumes.
-- Changed the custom switch to show a Close icon when off and a Check icon when
-  on, with a cross-fade.
-- Changed speed decimals to 0 for the first two units, 1 above that.
-- Changed data decimals to 0 for bytes, 2 above that.
-- Simplified the Usage access check. The pre-Q branch was removed.
-- Commented out keystore rules in .gitignore (reversed in 0.8.0).
+Release build:
+  Create release.properties in the project root:
+    storeFile=<path/to/keystore>
+    storePassword=<password>
+    keyAlias=<alias>
+    keyPassword=<password>
+  ./gradlew assembleRelease
 
-[0.7.0] - Daily Usage, Units, and Custom Switch (versionName 0.7.0, versionCode 8)
----------------------------------------------------------------------------------
+Release signing is applied only if release.properties exists and has all
+four keys. Otherwise the release build is unsigned.
 
-- Added daily data usage. Totals reset at midnight. Uses NetworkStatsManager
-  with Usage access, and falls back to a stored daily baseline without it.
-- Added the Usage access row in More → Notification layout.
-- Added the PACKAGE_USAGE_STATS permission.
-- Added speed units (bytes or bits per second) and data usage units.
-- Replaced the Switch component with a custom draggable switch.
-- Moved Notification settings into their own section.
 
-[0.6.0] - Single-Page Layout and Code Reorganization (versionName 0.6.0, versionCode 7)
----------------------------------------------------------------------------------------
+SUPPORT & CONTACT
+-------------------
+Email: sdcgroupofficial@gmail.com
+Report issues: Help & feedback inside the app
 
-- Removed the floating bottom toolbar and the two-pane adaptive layout.
-- Home and More are stacked on one scrolling page.
-- Moved the source files into the ui/ package and merged ColorScheme.kt into Color.kt.
-- Renamed the notification channel's display name to "Speed Meter".
-
-[0.5.0] - Data Usage and Theme Choice (versionName 0.5.0, versionCode 6)
-------------------------------------------------------------------------
-
-- Added session data usage (mobile and Wi-Fi) to the notification.
-- Added the Choose theme setting with System default, Light, and Dark options.
-- Replaced IndicatorEnableSetting with HomeScreen.
-- Moved all user-facing strings into strings.xml.
-
-[0.4.1] - Indicator Fix and Default Change (versionName 0.4.1, versionCode 5)
------------------------------------------------------------------------------
-
-- Fixed: the service no longer starts on launch when the indicator is off.
-- Changed: the indicator default is now off.
-- Changed: the fallback colour scheme moved to the Material 3 baseline palette.
-
-[0.4.0] - More Screen and Adaptive Layout (versionName 0.4.0, versionCode 4)
-----------------------------------------------------------------------------
-
-- Added the More screen, the About dialog, and Help & feedback email templates.
-- Added the adaptive list-detail layout for tablets and foldables (later removed).
-- Added the Material 3 Adaptive libraries and Material Icons Extended.
-- Added resource shrinking for release and a debug build type with the .debug suffix.
-
-[0.3.0] - Live Network Speed Indicator (versionName 0.3.0, versionCode 3)
-------------------------------------------------------------------------
-
-- Added live network speed monitoring through SpeedMonitorService and TrafficStats.
-- Added the status bar indicator notification and the Enable indicator setting.
-- Added the floating bottom toolbar (later removed).
-- Added the POST_NOTIFICATIONS request and the foreground service permissions.
-
-[0.2.0] - Foundation Update (versionName 0.2.0, versionCode 2)
---------------------------------------------------------------
-
-- Added the top app bar titled "Speed Meter" with pinned scroll behaviour.
-- Changed screen orientation from locked to sensor-driven.
-- Added adjustResize for keyboard handling.
-- Added the v4 signature step and keystore cleanup to the release workflow.
-
-[0.1.0] - Foundation Release (versionName 0.1.0, versionCode 1)
----------------------------------------------------------------
-
-- Initial app shell with enableEdgeToEdge(), Material 3 theming, and dynamic colour.
-- Adaptive app icon: background, 7-segment gauge foreground, night variants,
-  and monochrome icon for Android 13+.
-- Release build with R8/ProGuard minification and a conditional signing config.
-- CI workflow for debug APK builds and a release workflow for tagged builds.
+Made with ❤️ from India by SDC Group
