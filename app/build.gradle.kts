@@ -78,8 +78,8 @@ android {
         applicationId = "com.sdcgroup.speedmeter"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "0.8.0"
+        versionCode = 11
+        versionName = "0.8.1"
     }
 
     compileOptions {
@@ -119,7 +119,17 @@ android {
         resources {
             resources.excludes.add("/META-INF/{AL2.0,LGPL2.1}")
             resources.excludes.add("META-INF/kotlinx_coroutines_core.version")
+            resources.excludes.add("META-INF/*.version")
+            resources.excludes.add("META-INF/proguard/**")
+            resources.excludes.add("META-INF/*.kotlin_module")
+            resources.excludes.add("kotlin/**")
+            resources.excludes.add("DebugProbesKt.bin")
         }
+    }
+    bundle {
+        language { enableSplit = true }
+        density { enableSplit = true }
+        abi { enableSplit = true }
     }
 }
 

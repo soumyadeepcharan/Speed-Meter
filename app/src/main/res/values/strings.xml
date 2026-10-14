@@ -23,6 +23,12 @@
     <string name="more_data_unit_subtitle_bytes_decimal">Bytes, 1 MB = 1000 kB</string>
     <string name="more_data_unit_subtitle_bytes_binary">Bytes, 1 MiB = 1024 KiB</string>
 
+    <string name="more_icon_speed_type_title">Speed to show in indicator icon</string>
+    <string name="more_icon_speed_type_subtitle_total">Total speed</string>
+    <string name="more_icon_speed_type_subtitle_download">Download speed</string>
+    <string name="more_icon_speed_type_subtitle_upload">Upload speed</string>
+    <string name="icon_speed_type_dialog_label">Choose speed for indicator icon</string>
+
     <string name="more_section_notification_layout">Notification layout</string>
     <string name="usage_access_title">Usage access</string>
     <string name="usage_access_subtitle_not_granted">Required for accurate daily Data/WiFi totals — tap to grant</string>
@@ -34,6 +40,16 @@
     <string name="more_theme_subtitle_light">Light mode</string>
     <string name="more_theme_subtitle_dark">Dark mode</string>
     <string name="more_theme_toggle_description">Choose app theme</string>
+
+    <string name="more_start_on_boot_title">Start on boot</string>
+    <string name="more_start_on_boot_subtitle_enabled">The indicator will be started on boot</string>
+    <string name="more_start_on_boot_subtitle_disabled">The indicator will not be started on boot</string>
+
+    <string name="more_battery_optimization_title">Disable battery optimizations</string>
+    <string name="more_battery_optimization_subtitle_enabled">Battery optimization must be disabled for working in background</string>
+    <string name="more_battery_optimization_subtitle_disabled">Battery optimization is already disabled</string>
+
+    <string name="quit_button_description">Quit</string>
 
     <string name="more_section_support">Support</string>
     <string name="more_help_title">Help &amp; feedback</string>

@@ -21,8 +21,6 @@ class NotificationHelper(private val context: Context) {
     private val notificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-    private val remoteViews = RemoteViews(context.packageName, R.layout.notification_layout)
-
     fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -66,6 +64,7 @@ class NotificationHelper(private val context: Context) {
         totalDataUsage: String,
         wifiDataUsage: String
     ): RemoteViews {
+        val remoteViews = RemoteViews(context.packageName, R.layout.notification_layout)
         remoteViews.setTextViewText(
             R.id.notificationDownText,
             "${context.getString(R.string.download_label)}: ${speed.down.speedValue}${speed.down.speedUnit}"

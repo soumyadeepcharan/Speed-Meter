@@ -1,10 +1,12 @@
 package com.sdcgroup.speedmeter
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Process
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,17 +32,24 @@ import com.sdcgroup.speedmeter.data.SpeedUnit
 import com.sdcgroup.speedmeter.data.ThemeMode
 import com.sdcgroup.speedmeter.data.dataUnitFlow
 import com.sdcgroup.speedmeter.data.indicatorEnabledFlow
+import com.sdcgroup.speedmeter.data.quitRequestedFlow
 import com.sdcgroup.speedmeter.data.setDataUnit
+import com.sdcgroup.speedmeter.data.setIndicatorEnabled
+import com.sdcgroup.speedmeter.data.setQuitRequested
 import com.sdcgroup.speedmeter.data.setSpeedUnit
 import com.sdcgroup.speedmeter.data.setThemeMode
 import com.sdcgroup.speedmeter.data.speedUnitFlow
 import com.sdcgroup.speedmeter.data.themeModeFlow
+import com.sdcgroup.speedmeter.notification.NotificationHelper
+import com.sdcgroup.speedmeter.notification.NotificationHelper.Companion.NOTIFICATION_ID
 import com.sdcgroup.speedmeter.service.SpeedMonitorService
 import com.sdcgroup.speedmeter.ui.MyComposeApplicationTheme
 import com.sdcgroup.speedmeter.ui.SpeedMeterHomeMoreContent
 import com.sdcgroup.speedmeter.ui.SpeedMeterTopAppBar
+import android.app.NotificationManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
 
@@ -56,7 +65,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        NotificationHelper(this).createNotificationChannel()
+
         lifecycleScope.launch {
+            val quitRequested = quitRequestedFlow(this@MainActivity).first()
+            if (quitRequested) {
+                setQuitRequested(this@MainActivity, false)
+                return@launch
+            }
+
             val isEnabled = indicatorEnabledFlow(this@MainActivity).first()
             if (!isEnabled) return@launch
 
@@ -95,10 +112,30 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+fun quitApp(activity: ComponentActivity) {
+    runBlocking {
+        setIndicatorEnabled(activity, false)
+        setQuitRequested(activity, true)
+    }
+
+    val quitIntent = Intent(activity, SpeedMonitorService::class.java).apply {
+        action = SpeedMonitorService.ACTION_QUIT
+    }
+    activity.startService(quitIntent)
+
+    val notificationManager =
+        activity.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    notificationManager.cancel(NOTIFICATION_ID)
+
+    activity.finishAffinity()
+    Process.killProcess(Process.myPid())
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SpeedMeterApp() {
     val context = LocalContext.current
+    val activity = context as ComponentActivity
     val scope = rememberCoroutineScope()
     val topAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
@@ -141,6 +178,7 @@ fun SpeedMeterApp() {
                 SpeedMeterTopAppBar(
                     title = stringResource(id = R.string.app_name),
                     themeMode = themeMode,
+                    onQuitClick = { quitApp(activity) },
                     scrollBehavior = topAppBarScrollBehavior
                 )
             }

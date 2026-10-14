@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
 import android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS
@@ -23,11 +24,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -38,16 +42,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Help
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.BatteryAlert
 import androidx.compose.material.icons.rounded.DataUsage
+import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.NetworkCheck
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -71,6 +79,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -87,10 +97,15 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.sdcgroup.speedmeter.BuildConfig
 import com.sdcgroup.speedmeter.R
 import com.sdcgroup.speedmeter.data.DataUnit
+import com.sdcgroup.speedmeter.data.IconSpeedType
 import com.sdcgroup.speedmeter.data.SpeedUnit
 import com.sdcgroup.speedmeter.data.ThemeMode
+import com.sdcgroup.speedmeter.data.iconSpeedTypeFlow
 import com.sdcgroup.speedmeter.data.indicatorEnabledFlow
+import com.sdcgroup.speedmeter.data.setIconSpeedType
 import com.sdcgroup.speedmeter.data.setIndicatorEnabled
+import com.sdcgroup.speedmeter.data.setStartOnBoot
+import com.sdcgroup.speedmeter.data.startOnBootFlow
 import com.sdcgroup.speedmeter.service.SpeedMonitorService
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -119,12 +134,17 @@ private fun isUsageAccessGranted(context: Context): Boolean {
     return mode == AppOpsManager.MODE_ALLOWED
 }
 
+private fun isBatteryOptimizationDisabled(context: Context): Boolean {
+    val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+    return powerManager.isIgnoringBatteryOptimizations(context.packageName)
+}
+
 private const val ActionHoverStateLayerOpacity = 0.08f
 private const val ActionFocusStateLayerOpacity = 0.10f
 private const val ActionPressedStateLayerOpacity = 0.10f
 
 private enum class MoreAction {
-    NOTIFICATIONS, SPEED_UNIT, DATA_UNIT, USAGE_ACCESS, THEME, HELP, ABOUT
+    NOTIFICATIONS, SPEED_UNIT, DATA_UNIT, ICON_SPEED_TYPE, USAGE_ACCESS, THEME, START_ON_BOOT, BATTERY_OPTIMIZATION, HELP, ABOUT
 }
 
 private data class MoreItemSpec(
@@ -145,6 +165,26 @@ fun SpeedMeterHomeMoreContent(
     onDataUnitSelected: (DataUnit, () -> Unit) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val iconSpeedTypeFlowState = remember { iconSpeedTypeFlow(context) }
+    val iconSpeedType by iconSpeedTypeFlowState.collectAsState(initial = IconSpeedType.TOTAL)
+
+    val startOnBootFlowState = remember { startOnBootFlow(context) }
+    val startOnBoot by startOnBootFlowState.collectAsState(initial = false)
+
+    fun onIconSpeedTypeSelected(type: IconSpeedType, onSaved: () -> Unit) {
+        scope.launch {
+            setIconSpeedType(context, type)
+            onSaved()
+        }
+    }
+
+    fun onStartOnBootToggled(enabled: Boolean) {
+        scope.launch { setStartOnBoot(context, enabled) }
+    }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -164,6 +204,10 @@ fun SpeedMeterHomeMoreContent(
                 onSpeedUnitSelected = onSpeedUnitSelected,
                 dataUnit = dataUnit,
                 onDataUnitSelected = onDataUnitSelected,
+                iconSpeedType = iconSpeedType,
+                onIconSpeedTypeSelected = ::onIconSpeedTypeSelected,
+                startOnBoot = startOnBoot,
+                onStartOnBootToggled = ::onStartOnBootToggled,
             )
         }
     }
@@ -277,6 +321,10 @@ fun MoreScreen(
     onSpeedUnitSelected: (SpeedUnit, () -> Unit) -> Unit,
     dataUnit: DataUnit,
     onDataUnitSelected: (DataUnit, () -> Unit) -> Unit,
+    iconSpeedType: IconSpeedType,
+    onIconSpeedTypeSelected: (IconSpeedType, () -> Unit) -> Unit,
+    startOnBoot: Boolean,
+    onStartOnBootToggled: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -286,12 +334,15 @@ fun MoreScreen(
     var showThemeDialog by rememberSaveable { mutableStateOf(false) }
     var showSpeedUnitDialog by rememberSaveable { mutableStateOf(false) }
     var showDataUnitDialog by rememberSaveable { mutableStateOf(false) }
+    var showIconSpeedTypeDialog by rememberSaveable { mutableStateOf(false) }
     var isUsageAccessGranted by remember { mutableStateOf(isUsageAccessGranted(context)) }
+    var isBatteryOptimizationDisabled by remember { mutableStateOf(isBatteryOptimizationDisabled(context)) }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 isUsageAccessGranted = isUsageAccessGranted(context)
+                isBatteryOptimizationDisabled = isBatteryOptimizationDisabled(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -307,6 +358,10 @@ fun MoreScreen(
     val dataUnitSubtitleBitsDecimal = stringResource(id = R.string.more_data_unit_subtitle_bits_decimal)
     val dataUnitSubtitleBytesDecimal = stringResource(id = R.string.more_data_unit_subtitle_bytes_decimal)
     val dataUnitSubtitleBytesBinary = stringResource(id = R.string.more_data_unit_subtitle_bytes_binary)
+    val iconSpeedTypeTitle = stringResource(id = R.string.more_icon_speed_type_title)
+    val iconSpeedTypeSubtitleTotal = stringResource(id = R.string.more_icon_speed_type_subtitle_total)
+    val iconSpeedTypeSubtitleDownload = stringResource(id = R.string.more_icon_speed_type_subtitle_download)
+    val iconSpeedTypeSubtitleUpload = stringResource(id = R.string.more_icon_speed_type_subtitle_upload)
     val usageAccessTitle = stringResource(id = R.string.usage_access_title)
     val usageAccessSubtitleGranted = stringResource(id = R.string.usage_access_subtitle_granted)
     val usageAccessSubtitleNotGranted = stringResource(id = R.string.usage_access_subtitle_not_granted)
@@ -314,6 +369,12 @@ fun MoreScreen(
     val themeSubtitleSystem = stringResource(id = R.string.more_theme_subtitle_system)
     val themeSubtitleLight = stringResource(id = R.string.more_theme_subtitle_light)
     val themeSubtitleDark = stringResource(id = R.string.more_theme_subtitle_dark)
+    val startOnBootTitle = stringResource(id = R.string.more_start_on_boot_title)
+    val startOnBootSubtitleEnabled = stringResource(id = R.string.more_start_on_boot_subtitle_enabled)
+    val startOnBootSubtitleDisabled = stringResource(id = R.string.more_start_on_boot_subtitle_disabled)
+    val batteryOptimizationTitle = stringResource(id = R.string.more_battery_optimization_title)
+    val batteryOptimizationSubtitleEnabled = stringResource(id = R.string.more_battery_optimization_subtitle_enabled)
+    val batteryOptimizationSubtitleDisabled = stringResource(id = R.string.more_battery_optimization_subtitle_disabled)
     val helpTitle = stringResource(id = R.string.more_help_title)
     val helpSubtitle = stringResource(id = R.string.more_help_subtitle)
     val aboutTitle = stringResource(id = R.string.more_about_title)
@@ -330,6 +391,12 @@ fun MoreScreen(
         DataUnit.BYTES_BINARY -> dataUnitSubtitleBytesBinary
     }
 
+    val iconSpeedTypeSubtitle = when (iconSpeedType) {
+        IconSpeedType.TOTAL -> iconSpeedTypeSubtitleTotal
+        IconSpeedType.DOWNLOAD -> iconSpeedTypeSubtitleDownload
+        IconSpeedType.UPLOAD -> iconSpeedTypeSubtitleUpload
+    }
+
     val usageAccessSubtitle = if (isUsageAccessGranted) usageAccessSubtitleGranted else usageAccessSubtitleNotGranted
 
     val themeSubtitle = when (themeMode) {
@@ -338,7 +405,15 @@ fun MoreScreen(
         ThemeMode.DARK -> themeSubtitleDark
     }
 
-    val notificationSettingsItems = remember(speedUnitSubtitle, dataUnitSubtitle) {
+    val startOnBootSubtitle = if (startOnBoot) startOnBootSubtitleEnabled else startOnBootSubtitleDisabled
+
+    val batteryOptimizationSubtitle = if (!isBatteryOptimizationDisabled) {
+        batteryOptimizationSubtitleEnabled
+    } else {
+        batteryOptimizationSubtitleDisabled
+    }
+
+    val notificationSettingsItems = remember(speedUnitSubtitle, dataUnitSubtitle, iconSpeedTypeSubtitle) {
         listOf(
             MoreItemSpec(
                 icon = Icons.Rounded.Notifications,
@@ -358,6 +433,12 @@ fun MoreScreen(
                 subtitle = dataUnitSubtitle,
                 action = MoreAction.DATA_UNIT,
             ),
+            MoreItemSpec(
+                icon = Icons.Rounded.GraphicEq,
+                title = iconSpeedTypeTitle,
+                subtitle = iconSpeedTypeSubtitle,
+                action = MoreAction.ICON_SPEED_TYPE,
+            ),
         )
     }
 
@@ -373,14 +454,28 @@ fun MoreScreen(
         )
     }
 
-    val generalItems = remember(themeSubtitle) {
+    val generalItems = remember(themeSubtitle, startOnBootSubtitle, startOnBoot, batteryOptimizationSubtitle, isBatteryOptimizationDisabled) {
         listOf(
             MoreItemSpec(
                 icon = Icons.Rounded.Palette,
                 title = themeTitle,
                 subtitle = themeSubtitle,
                 action = MoreAction.THEME,
-            )
+            ),
+            MoreItemSpec(
+                icon = Icons.Rounded.PowerSettingsNew,
+                title = startOnBootTitle,
+                subtitle = startOnBootSubtitle,
+                action = MoreAction.START_ON_BOOT,
+                trailingSwitch = startOnBoot,
+            ),
+            MoreItemSpec(
+                icon = Icons.Rounded.BatteryAlert,
+                title = batteryOptimizationTitle,
+                subtitle = batteryOptimizationSubtitle,
+                action = MoreAction.BATTERY_OPTIMIZATION,
+                trailingSwitch = !isBatteryOptimizationDisabled,
+            ),
         )
     }
 
@@ -413,6 +508,7 @@ fun MoreScreen(
             }
             MoreAction.SPEED_UNIT -> showSpeedUnitDialog = true
             MoreAction.DATA_UNIT -> showDataUnitDialog = true
+            MoreAction.ICON_SPEED_TYPE -> showIconSpeedTypeDialog = true
             MoreAction.USAGE_ACCESS -> {
                 val intent = Intent(ACTION_USAGE_ACCESS_SETTINGS)
                 try {
@@ -420,6 +516,18 @@ fun MoreScreen(
                 } catch (_: Exception) { }
             }
             MoreAction.THEME -> showThemeDialog = true
+            MoreAction.START_ON_BOOT -> onStartOnBootToggled(!startOnBoot)
+            MoreAction.BATTERY_OPTIMIZATION -> {
+                if (!isBatteryOptimizationDisabled) {
+                    val intent = Intent(
+                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:${context.packageName}")
+                    )
+                    try {
+                        context.startActivity(intent)
+                    } catch (_: Exception) { }
+                }
+            }
             MoreAction.HELP -> showHelpSheet = true
             MoreAction.ABOUT -> showAboutDialog = true
             else -> { }
@@ -461,6 +569,16 @@ fun MoreScreen(
                 onDataUnitSelected(unit) { showDataUnitDialog = false }
             },
             onDismiss = { showDataUnitDialog = false }
+        )
+    }
+
+    if (showIconSpeedTypeDialog) {
+        IconSpeedTypeDialog(
+            currentType = iconSpeedType,
+            onTypeSelected = { type ->
+                onIconSpeedTypeSelected(type) { showIconSpeedTypeDialog = false }
+            },
+            onDismiss = { showIconSpeedTypeDialog = false }
         )
     }
 
@@ -659,7 +777,8 @@ private fun HelpFeedbackBottomSheet(onDismiss: () -> Unit) {
         }
     }
 
-    val sheetHeight = configuration.screenHeightDp.dp * 0.3f
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val sheetHeight = (configuration.screenHeightDp.dp - statusBarHeight) * 0.4f
     val contentAlpha by animateFloatAsState(
         targetValue = if (sheetState.targetValue == SheetValue.Hidden) 0f else 1f,
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
@@ -670,7 +789,7 @@ private fun HelpFeedbackBottomSheet(onDismiss: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        dragHandle = null,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = Color.Transparent) },
         modifier = Modifier.semantics { contentDescription = dialogLabel },
     ) {
         Column(
@@ -892,6 +1011,58 @@ private fun SpeedUnitDialog(
                     ) {
                         RadioButton(
                             selected = unit == currentUnit,
+                            onClick = null,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun IconSpeedTypeDialog(
+    currentType: IconSpeedType,
+    onTypeSelected: (IconSpeedType) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val dialogLabel = stringResource(id = R.string.icon_speed_type_dialog_label)
+    val closeLabel = stringResource(id = R.string.dialog_close)
+    val options = listOf(
+        IconSpeedType.TOTAL to stringResource(id = R.string.more_icon_speed_type_subtitle_total),
+        IconSpeedType.DOWNLOAD to stringResource(id = R.string.more_icon_speed_type_subtitle_download),
+        IconSpeedType.UPLOAD to stringResource(id = R.string.more_icon_speed_type_subtitle_upload),
+    )
+
+    AppAlertDialog(
+        onDismissRequest = onDismiss,
+        title = stringResource(id = R.string.more_icon_speed_type_title),
+        icon = Icons.Rounded.Speed,
+        dialogLabel = dialogLabel,
+        confirmButtonLabel = closeLabel,
+        onConfirm = onDismiss,
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                options.forEach { (type, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.extraLarge)
+                            .selectable(
+                                selected = type == currentType,
+                                role = Role.RadioButton,
+                                onClick = { onTypeSelected(type) },
+                            )
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = type == currentType,
                             onClick = null,
                         )
                         Spacer(modifier = Modifier.width(8.dp))

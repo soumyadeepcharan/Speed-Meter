@@ -22,6 +22,9 @@ val INDICATOR_ENABLED_KEY = booleanPreferencesKey("indicatorEnabled")
 val THEME_MODE_KEY = intPreferencesKey("themeMode")
 val SPEED_UNIT_KEY = intPreferencesKey("speedUnit")
 val DATA_UNIT_KEY = intPreferencesKey("dataUnit")
+val ICON_SPEED_TYPE_KEY = intPreferencesKey("iconSpeedType")
+val START_ON_BOOT_KEY = booleanPreferencesKey("startOnBoot")
+val QUIT_REQUESTED_KEY = booleanPreferencesKey("quitRequested")
 val DAILY_USAGE_DATE_KEY = stringPreferencesKey("dailyUsageDate")
 val DAILY_DATA_BASELINE_KEY = longPreferencesKey("dailyDataBaseline")
 val DAILY_WIFI_BASELINE_KEY = longPreferencesKey("dailyWifiBaseline")
@@ -55,6 +58,17 @@ enum class DataUnit(val storageValue: Int) {
     companion object {
         fun fromStorageValue(value: Int): DataUnit =
             entries.firstOrNull { it.storageValue == value } ?: BYTES_BINARY
+    }
+}
+
+enum class IconSpeedType(val storageValue: Int) {
+    TOTAL(0),
+    DOWNLOAD(1),
+    UPLOAD(2);
+
+    companion object {
+        fun fromStorageValue(value: Int): IconSpeedType =
+            entries.firstOrNull { it.storageValue == value } ?: TOTAL
     }
 }
 
@@ -117,6 +131,48 @@ fun dataUnitFlow(context: Context): Flow<DataUnit> =
 suspend fun setDataUnit(context: Context, unit: DataUnit) {
     context.dataStore.edit { prefs ->
         prefs[DATA_UNIT_KEY] = unit.storageValue
+    }
+}
+
+fun iconSpeedTypeFlow(context: Context): Flow<IconSpeedType> =
+    context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences())
+            else throw exception
+        }
+        .map { prefs -> IconSpeedType.fromStorageValue(prefs[ICON_SPEED_TYPE_KEY] ?: IconSpeedType.TOTAL.storageValue) }
+
+suspend fun setIconSpeedType(context: Context, type: IconSpeedType) {
+    context.dataStore.edit { prefs ->
+        prefs[ICON_SPEED_TYPE_KEY] = type.storageValue
+    }
+}
+
+fun startOnBootFlow(context: Context): Flow<Boolean> =
+    context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences())
+            else throw exception
+        }
+        .map { prefs -> prefs[START_ON_BOOT_KEY] ?: false }
+
+suspend fun setStartOnBoot(context: Context, enabled: Boolean) {
+    context.dataStore.edit { prefs ->
+        prefs[START_ON_BOOT_KEY] = enabled
+    }
+}
+
+fun quitRequestedFlow(context: Context): Flow<Boolean> =
+    context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences())
+            else throw exception
+        }
+        .map { prefs -> prefs[QUIT_REQUESTED_KEY] ?: false }
+
+suspend fun setQuitRequested(context: Context, quit: Boolean) {
+    context.dataStore.edit { prefs ->
+        prefs[QUIT_REQUESTED_KEY] = quit
     }
 }
 

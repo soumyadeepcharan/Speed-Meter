@@ -1,45 +1,45 @@
-# Speed Meter v0.8.0: Smarter Permissions and Cleaner Help
+# Speed Meter v0.8.1: Start on Boot, Quit, and Icon Speed
 
-**Speed Meter v0.8.0** asks for notification permission only when you turn the indicator on, tidies up the status bar notification, and turns Help & feedback into a quick bottom sheet.
+**Speed Meter v0.8.1** lets the indicator start after a restart, adds a quit button, lets you choose which speed the icon shows, and adds a shortcut for battery settings. The status bar icon is sharper, and the notification fields line up more evenly.
 
 ---
 
 ## What's New
 
-### 🔔 Notification Permission When You Need It
-- **Asked when you turn the indicator on.** Speed Meter no longer asks for notification permission the moment you open the app.
-- **Indicator waits for permission.** If you say no, the indicator stays off until you allow notifications.
-- **Quieter first launch.** If the indicator is off, the app doesn't ask for anything.
+### 🚀 Start on Boot
+- A new **Start on boot** switch is in **More → General**.
+- When it is on, the indicator starts automatically after your phone restarts.
+- It starts only if the indicator is turned on, and only if you have not quit the app.
 
-### 📶 Tidier Notification
-- The notification now shows **Down**, **Up**, **Data**, and **WiFi** in a single row.
-- Each value sits in its own column, so the layout stays steady as numbers change.
+### ⏻ Quit Button
+- A new power button in the top bar stops the indicator, removes the notification and closes the app.
+- The indicator stays off after you quit, including after a restart. Turn it on again from the Home section.
 
-### 🖼️ Status Bar Icon
-- The status bar icon uses a fixed layout, with the speed and unit placed for a clear look.
+### 🎚️ Choose the Icon Speed
+- A new **Speed to show in indicator icon** option is in **More → Notification settings**.
+- Pick **Total speed**, **Download speed** or **Upload speed** for the status bar icon.
+- The change applies right away.
 
-### 💬 Help & Feedback Sheet
-- **Help & feedback** opens a small bottom sheet with **Suggest a feature** and **Report a bug**.
-- Choosing either option opens your email app with a message ready to send.
-
-### 🎚️ Smoother Switch
-- The custom switch moves a little faster and settles more quickly.
-
-### 🧩 Dialogs Stay in View
-- Dialogs now stay clear of the status bar and navigation bar.
+### 🔋 Battery Optimization Shortcut
+- A new **Disable battery optimizations** option is in **More → General**.
+- Its switch shows whether battery optimization still applies to Speed Meter.
+- Tap it to open the system prompt that lets the indicator run in the background.
 
 ---
 
-## Under the Hood
-- Notification updates reuse one layout object, which reduces work every second.
-- The app's signing files are excluded from source control again.
-- Version bumped to **0.8.0**.
+## Fixes and Improvements
+- **Sharper status bar icon.** The icon is drawn at twice the resolution, with larger text.
+- **Even notification layout.** The Down, Up, Data and WiFi fields share the width equally, so they fit more screen sizes.
+- **Notification channel on launch.** The app creates the notification channel when it starts.
+- **Quit is respected at launch.** After you quit, the app does not restart the indicator the next time you open it.
+- **Smaller release builds.** Added shrinking rules, removed unused packaged files, and enabled split app bundles by language, screen density and processor type.
 
 ---
 
 ## Permissions
-- **Notifications** are requested when you turn the indicator on (Android 13 and newer).
-- **Usage access** (optional) lets the app read Android's data usage records for exact daily totals. Turn it on in **More → Notification layout**. The app does not send your data anywhere.
+- **Start on boot** uses a permission that lets the app start after your phone restarts. It is used only when you turn this option on.
+- **Battery optimization** lets the app ask Android to keep the indicator running in the background. The app asks only when you tap the option.
+- **Usage access** (optional) gives exact daily totals. Turn it on in **More → Notification layout**.
 
 ---
 
@@ -50,9 +50,9 @@
 ---
 
 ## Known Notes
-- Without Usage access, daily totals can read lower after a phone restart.
-- Some devices name their Wi-Fi network interface differently. On those, Wi-Fi shows 0 until Usage access is granted.
-- Very long speed values may be clipped in the status bar icon.
+- Daily totals are most accurate with **Usage access** granted. Without it, they are estimates.
+- Some phone makers add their own background limits. You may also need to allow Speed Meter to run in the background in your phone's settings.
+- Start on boot needs notification permission to show the indicator. If it was denied, allow notifications in your phone's settings.
 - This release still uses a pre-release (alpha) version of Material 3, so minor visual quirks may appear.
 
 Thanks for using **Speed Meter**! 🚀

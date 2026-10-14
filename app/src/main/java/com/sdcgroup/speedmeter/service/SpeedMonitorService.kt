@@ -8,12 +8,15 @@ import android.net.TrafficStats
 import android.os.IBinder
 import android.os.Process
 import com.sdcgroup.speedmeter.data.DataUnit
+import com.sdcgroup.speedmeter.data.HumanSpeed
+import com.sdcgroup.speedmeter.data.IconSpeedType
 import com.sdcgroup.speedmeter.data.Speed
 import com.sdcgroup.speedmeter.data.SpeedUnit
 import com.sdcgroup.speedmeter.data.dataUnitFlow
 import com.sdcgroup.speedmeter.data.formatDataUsage
 import com.sdcgroup.speedmeter.data.formatSpeed
 import com.sdcgroup.speedmeter.data.getDailyUsageBaseline
+import com.sdcgroup.speedmeter.data.iconSpeedTypeFlow
 import com.sdcgroup.speedmeter.data.saveDailyUsageBaseline
 import com.sdcgroup.speedmeter.data.speedUnitFlow
 import com.sdcgroup.speedmeter.notification.IconGenerator
@@ -34,6 +37,7 @@ class SpeedMonitorService : Service() {
     companion object {
         private const val NETWORK_TYPE_MOBILE = 0
         private const val NETWORK_TYPE_WIFI = 1
+        const val ACTION_QUIT = "com.sdcgroup.speedmeter.action.QUIT"
     }
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -47,6 +51,7 @@ class SpeedMonitorService : Service() {
 
     private var currentSpeedUnit = SpeedUnit.BYTES_PER_SECOND
     private var currentDataUnit = DataUnit.BYTES_BINARY
+    private var currentIconSpeedType = IconSpeedType.TOTAL
 
     private var dailyDate = ""
     private var dailyDataBaseline = 0L
@@ -63,9 +68,16 @@ class SpeedMonitorService : Service() {
 
         scope.launch { speedUnitFlow(this@SpeedMonitorService).collect { currentSpeedUnit = it } }
         scope.launch { dataUnitFlow(this@SpeedMonitorService).collect { currentDataUnit = it } }
+        scope.launch { iconSpeedTypeFlow(this@SpeedMonitorService).collect { currentIconSpeedType = it } }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_QUIT) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         val initialSpeed = Speed(
             down = formatSpeed(0L, currentSpeedUnit),
             up = formatSpeed(0L, currentSpeedUnit),
@@ -89,7 +101,8 @@ class SpeedMonitorService : Service() {
                 while (isActive) {
                     ensureDailyBaseline()
                     val speed = measureNetworkSpeed()
-                    val icon = iconGenerator.generateIcon(speed.total)
+                    val iconSpeed = iconSpeedForType(speed)
+                    val icon = iconGenerator.generateIcon(iconSpeed)
                     val (dataUsage, wifiUsage) = getTodayUsage()
                     val totalDataUsage = formatDataUsage(dataUsage, currentDataUnit)
                     val wifiDataUsage = formatDataUsage(wifiUsage, currentDataUnit)
@@ -99,6 +112,12 @@ class SpeedMonitorService : Service() {
             }
         }
         return START_STICKY
+    }
+
+    private fun iconSpeedForType(speed: Speed): HumanSpeed = when (currentIconSpeedType) {
+        IconSpeedType.TOTAL -> speed.total
+        IconSpeedType.DOWNLOAD -> speed.down
+        IconSpeedType.UPLOAD -> speed.up
     }
 
     private fun getTodayUsage(): Pair<Long, Long> {

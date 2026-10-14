@@ -13,7 +13,8 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 ### ✅ Available Right Now
 
 **Live network speed**
-- **Status bar indicator.** A small icon in your status bar shows your total network speed, updated every second.
+- **Status bar indicator.** A small icon in your status bar shows your network speed, updated every second.
+- **Choose what the icon shows.** Pick **Total speed**, **Download speed** or **Upload speed** for the icon.
 - **Download and upload.** The notification shows your download and upload speeds on one line.
 - **Speed units.** Choose **bytes per second** (KB/s, MB/s, GB/s) or **bits per second** (Kb/s, Mb/s, Gb/s).
 - **Runs in the background.** The indicator keeps working while you use other apps.
@@ -21,7 +22,7 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 
 **Daily data usage**
 - **Today's mobile and Wi-Fi data.** The notification shows how much **Data** (mobile) and **WiFi** you have used since midnight.
-- **Exact numbers with Usage access.** Grant Usage access to get exact daily totals from Android. The switch in **More → Notification layout** shows whether access is on. Turn it on there, or turn it off in system settings.
+- **Exact numbers with Usage access.** Grant Usage access to get exact daily totals from Android. The switch in **More → Notification layout** shows whether access is on.
 - **Without Usage access.** The app still shows totals, but they may be lower after a phone restart.
 - **Data units.** Choose how sizes are shown:
   - Bits, decimal (Mb = 1000 Kb)
@@ -29,23 +30,31 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
   - Bytes, binary (MiB = 1024 KiB), the default
 
 **Home section**
-- **Enable indicator.** Tap the row or its switch to turn the status bar indicator on or off. The indicator is **off** until you turn it on. Your choice is saved and respected every time you open the app.
+- **Enable indicator.** Tap the row or its switch to turn the indicator on or off. It is **off** until you turn it on. Your choice is saved.
 - **Notification permission.** On Android 13 and newer, turning the indicator on asks for permission to show notifications. If you say no, the indicator stays off.
+
+**Top bar**
+- **Quit button (power icon).** Stops the indicator, removes the notification and closes the app. The indicator stays off until you turn it on again, including after a restart.
 
 **More section**
 - **Notification settings.** Opens your phone's notification settings for Speed Meter.
+- **Speed to show in indicator icon.** Choose total, download or upload speed.
 - **Speed units.** Pick bytes or bits per second.
 - **Data usage units.** Pick one of the three data unit styles.
-- **Usage access.** A switch that shows whether Usage access is on. Tapping it opens the system setting.
-- **Choose theme.** Pick **System default**, **Light mode** or **Dark mode**. Your choice is saved.
-- **Help & feedback.** Opens a sheet with **Suggest a feature** and **Report a bug**. Either option opens your email app with a message ready to send to the developer. Bug reports include your app version, phone model and Android version.
-- **About.** Shows the app name, version and a short description.
+- **Notification layout → Usage access.** A switch that shows whether Usage access is on. Tapping it opens the system setting.
+- **General:**
+  - **Choose theme.** Pick **System default**, **Light mode** or **Dark mode**. Your choice is saved.
+  - **Start on boot.** When on, the indicator starts after your phone restarts. It starts only if the indicator is on and you have not quit the app.
+  - **Disable battery optimizations.** Shows a switch. It is on while battery optimization still applies to Speed Meter. Tap it to open the system prompt that lets the indicator run in the background. The status updates when you come back to the app.
+- **Support:**
+  - **Help & feedback.** Opens a sheet with **Suggest a feature** and **Report a bug**. Either option opens your email app with a message ready to send to the developer. Bug reports include your app version, phone model and Android version.
+  - **About.** Shows the app name, version and a short description.
 
 **Look and feel**
-- **Title bar.** The top of the screen shows "Speed Meter" and stays in place as you scroll.
+- **Title bar.** The top of the screen shows "Speed Meter" and the quit button, and stays in place as you scroll.
 - **Single scrolling page.** Home and More are on one page. Scroll down to reach More.
 - **Custom switch.** The switch can be tapped or dragged. Its icon changes as it moves.
-- **Light, dark or system theme.** Follow your phone's setting, or choose light or dark mode in **More → Choose theme**.
+- **Light, dark or system theme.** Follow your phone's setting, or choose light or dark mode in **More → General → Choose theme**.
 - **Wallpaper colours (Android 12 and newer).** On supported phones, the app picks its colours from your wallpaper.
 - **Standard colours on older phones.** Phones without wallpaper colours get a built-in colour scheme.
 - **Full-screen display.** Content runs edge to edge behind the status bar and navigation bar.
@@ -55,10 +64,13 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 - **Speedometer app icon.** The icon shows a coloured gauge with a needle.
 - **Themed icon (Android 13 and newer).** A single-colour icon matches your launcher's theme.
 - **Smoother launch.** The app opens without a blank preview screen.
+- **Sharper status bar icon.** The icon is drawn at higher resolution, so it looks crisp on high-density screens.
 
 **Permissions**
-- **Notifications (Android 13 and newer).** Asked for when you turn the indicator on. The indicator needs this permission. If you deny it, the indicator will not appear until you allow it in your phone's settings.
+- **Notifications (Android 13 and newer).** Asked for when you turn the indicator on. The indicator needs it. If you deny it, the indicator will not appear until you allow it in your phone's settings.
 - **Usage access (optional).** Lets the app read Android's data usage records for exact daily totals. You grant it in system settings. The app does not send your data anywhere.
+- **Start on boot.** Lets the app start the indicator after your phone restarts. Only used when you turn on **Start on boot**.
+- **Battery optimization (optional).** Lets the app ask Android to keep the indicator running in the background.
 - **Internet and network status.** Used to read your network speed and data use.
 
 ---
@@ -78,6 +90,7 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 3. Open the downloaded APK and tap **Install**.
 4. Open **Speed Meter**. On the Home section, turn on **Enable indicator**. If asked, allow notifications.
 5. Optional: in **More → Notification layout**, turn on the **Usage access** switch for exact daily totals.
+6. Optional: in **More → General**, turn on **Start on boot**, and tap **Disable battery optimizations** if your phone restricts background apps.
 
 ---
 
@@ -92,6 +105,7 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 
 - Kotlin with Jetpack Compose and Material 3
 - Background service with live speed readings from TrafficStats and daily totals from NetworkStatsManager
+- Boot receiver for the Start on boot option
 - See `CHANGELOG.txt` for the full tech stack and feature history
 
 ---
@@ -99,7 +113,7 @@ Speed Meter is an Android app that shows your phone's current network speed, dow
 ## Support
 
 Have a problem or an idea?
-Use **More → Help & feedback** in the app, or reach out at **sdcgroupofficial@gmail.com**
+Use **More → Support → Help & feedback** in the app, or reach out at **sdcgroupofficial@gmail.com**
 
 ---
 
