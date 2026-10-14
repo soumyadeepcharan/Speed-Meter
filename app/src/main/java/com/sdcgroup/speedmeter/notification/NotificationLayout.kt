@@ -63,7 +63,7 @@ internal fun NotificationLayoutSection(modifier: Modifier = Modifier) {
         }
     }
 
-    SettingsSectionBlock(
+    MoreSectionBlock(
         title = stringResource(id = R.string.more_section_notification_layout),
         items = notificationLayoutItems,
         onItemAction = ::onItemAction,

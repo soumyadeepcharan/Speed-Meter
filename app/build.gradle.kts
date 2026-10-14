@@ -3,6 +3,7 @@ import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.compose.compiler)
 }
 
@@ -77,13 +78,17 @@ android {
         applicationId = "com.sdcgroup.speedmeter"
         minSdk = 26
         targetSdk = 36
-        versionCode = 14
-        versionName = "3.0.0"
+        versionCode = 15
+        versionName = "4.0.0"
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
     }
 
     buildTypes {
@@ -107,7 +112,7 @@ android {
 
     buildFeatures {
         compose = true
-        buildConfig = true
+        buildConfig   = true
     }
 
     packaging {
@@ -132,7 +137,7 @@ android {
     }
 }
 
-kotlin {
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         freeCompilerArgs.addAll(

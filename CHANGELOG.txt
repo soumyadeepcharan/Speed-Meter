@@ -1,7 +1,7 @@
 Speed Meter - Changelog & Technical Documentation
 ===================================================
 
-[Version 3.0.0] - Current Release (versionName 3.0.0, versionCode 14)
+[Version 4.0.0] - Current Release (versionName 4.0.0, versionCode 15)
 -----------------------------------------------------------------------
 
 OVERVIEW
@@ -16,30 +16,30 @@ TECHNOLOGY STACK
 -----------------
 
 Language & Platform:
-  • Kotlin 2.3.21 (built into the Android Gradle Plugin, so no separate
-    kotlin-android plugin is applied)
-  • Android Gradle Plugin 9.3.1; Gradle wrapper 9.6.1
+  • Kotlin 2.1.20 (kotlin-android Gradle plugin applied in app/build.gradle.kts)
+  • Android Gradle Plugin 8.11.0; Gradle wrapper 8.14.3
   • Android minSdk 26 (Oreo), targetSdk and compileSdk 36
-  • Java compatibility and JVM target: 17 (set through the kotlin { } block)
+  • Java compatibility: 17; Kotlin JVM target: 17 (kotlinOptions block)
   • Package: com.sdcgroup.speedmeter
 
 UI:
   • Jetpack Compose with Material 3 (Compose BOM 2026.02.01,
     material3 1.5.0-alpha03)
-  • Compose compiler plugin (org.jetbrains.kotlin.plugin.compose)
+  • Compose compiler plugin (org.jetbrains.compose.compiler)
   • Opt-in APIs: ExperimentalMaterial3Api, ExperimentalMaterial3ExpressiveApi
   • Material 3 Expressive animated-shape buttons (ButtonDefaults.shapes())
     through the shared appButtonShapes() helper: a rounded resting shape that
     morphs on press
+  • Custom Typography with an explicit bodyLarge style (16sp, 24sp line
+    height, 0.5sp letter spacing) using the default font family
   • Material Icons (core and extended)
-  • Default Material 3 typography (Typography()) with no custom text styles
-  • Edge-to-edge rendering (enableEdgeToEdge) with transparent status bar;
-    status and navigation bar icon contrast follows the theme
-  • Navigation bar area filled by a bottom inset spacer using the surface
-    color (windowInsetsBottomHeight(WindowInsets.navigationBars))
+  • Edge-to-edge rendering (enableEdgeToEdge) with transparent status and
+    navigation bars; status and navigation bar icon contrast follows the theme
   • Device-matched corner shapes: the corner radius is read from
     View.Display.getRoundedCorner() on Android 12+ and used for all Material
     shape tokens; falls back to 28dp when unavailable
+  • Settings page padding follows the navigation bar (navigationBarsPadding())
+    and its bottom corners are square
   • Custom components: gesture-driven Switch (thumb follows the finger),
     AppAlertDialog, bottom sheet helpers, and WindowSizeClass-based responsive
     layout
@@ -61,9 +61,7 @@ System Integration:
   • TrafficStats API: real-time speed from byte-counter deltas
   • NetworkStatsManager: per-day mobile and WiFi totals. Falls back to a
     TrafficStats-based daily baseline when Usage Access isn't granted.
-  • Foreground service (dataSync type) with a RemoteViews notification.
-    Notifications use FOREGROUND_SERVICE_IMMEDIATE behavior so they appear
-    without the system deferring them.
+  • Foreground service (dataSync type) with a RemoteViews notification
   • Configuration-change handling in the service re-posts the notification
     (onConfigurationChanged)
   • BroadcastReceiver for BOOT_COMPLETED (optional auto-start)
@@ -77,11 +75,10 @@ System Integration:
   • androidx.lifecycle.compose.LocalLifecycleOwner
 
 Build System:
-  • Version catalog: gradle/libs.versions.toml (agp 9.3.1, kotlin 2.3.21)
-  • Root build.gradle.kts declares the Kotlin Gradle plugin classpath
-    (2.3.21) for the buildscript block
-  • Packaging keeps debug symbols for libandroidx.graphics.path.so and
-    libdatastore_shared_counter.so (keepDebugSymbols)
+  • Version catalog: gradle/libs.versions.toml (agp 8.11.0, kotlin 2.1.20)
+  • Root build.gradle.kts declares plugins with apply false (no buildscript
+    block)
+  • KotlinCompile tasks configured with JVM target 17 and compiler options
   • R8/ProGuard minification and resource shrinking for release builds
   • Conditional release signing from release.properties (git-ignored)
 
@@ -126,8 +123,8 @@ FEATURES TO DATE
     (binary KiB/MiB/GiB), via the same scaledMagnitude() helper
 
 ✅ Indicator Enable/Disable
-  • One switch (IndicatorToggleCard) at the top of the settings screen
-    starts and stops the foreground service
+  • One switch (HomeScreen) at the top of the settings screen starts and stops
+    the foreground service
   • Custom Switch with live thumb tracking during drag (awaitEachGesture),
     not just tap-to-toggle. Track and thumb colors switch instantly with the
     checked state.
@@ -138,12 +135,13 @@ FEATURES TO DATE
     centered in a reserved 108dp slot. It stops the service, cancels the
     notification, and ends the process.
 
-✅ Settings Screen (single scrollable column)
-  • Entry composable: SpeedMeterSettingsScreen
-  • Clipped to MaterialTheme.shapes.extraLarge; 16dp horizontal padding
-  • Indicator toggle card at the top, followed by the settings sections
-    (SettingsSections)
-  • Section titles are indented by the device corner radius
+✅ Settings Screen (single scrollable column, stops above the navigation bar)
+  • Entry composable: SpeedMeterHomeMoreContent
+  • Clipped to MaterialTheme.shapes.extraLarge with square bottom corners;
+    16dp horizontal padding
+  • Indicator switch card (HomeScreen) at the top, followed by the settings
+    sections (MoreScreen)
+  • Section titles use a 4dp start indent
   • Notification settings
     - Opens Android's per-app notification settings
     - Speed units (Bytes/sec or Bits/sec)
@@ -165,8 +163,7 @@ FEATURES TO DATE
       Both open a pre-filled email. Bug reports include app version, device
       model, device name, and Android version.
     - About dialog with app version
-  • Section items use a shared SettingsSectionBlock and SettingsListItem
-    layout
+  • Section items use the shared MoreSectionBlock and MoreListItem layout
   • Option rows and dialogs use MaterialTheme.shapes.extraLarge, so ripples
     and corners follow the rounded design
 
@@ -177,8 +174,8 @@ FEATURES TO DATE
     corner radius
   • Theme state comes from one collector; key(themeMode) on the top app bar
     avoids visible lag when switching themes
-  • Status bar icon appearance follows the active theme; navigation bar
-    contrast enforcement is disabled on Android 10+
+  • Status and navigation bar icon appearance follows the active theme;
+    navigation bar contrast enforcement is disabled on Android 10+
 
 ✅ Responsive Layout
   • WindowWidthSizeClass and WindowHeightSizeClass (ExtraCompact through
@@ -204,8 +201,8 @@ ARCHITECTURE
 
 Single-Activity, Service-Backed:
   • MainActivity: single entry point. Hosts the Compose UI (Scaffold with top
-    bar, bottom inset bar, and settings screen), enables edge-to-edge, and
-    handles initial permission and service bootstrap.
+    app bar and settings screen), enables edge-to-edge, and handles initial
+    permission and service bootstrap.
   • SpeedMonitorService: foreground service that owns the monitoring loop,
     independent of the UI lifecycle
   • NotificationHelper: channel creation and RemoteViews notification
@@ -242,10 +239,10 @@ app/src/main/java/com/sdcgroup/speedmeter/
 ├── notification/
 │   ├── NotificationHelper.kt   — channel and RemoteViews notification builder
 │   ├── NotificationLayout.kt   — notification layout definitions
-│   ├── NotificationSettings.kt — settings screen (SpeedMeterSettingsScreen),
+│   ├── NotificationSettings.kt — settings screen (SpeedMeterHomeMoreContent),
 │   │                              settings sections and dialogs
-│   ├── Indicator.kt            — indicator toggle card (IndicatorToggleCard)
-│   │                              and permission checks (isUsageAccessGranted,
+│   ├── Indicator.kt            — indicator switch card (HomeScreen) and
+│   │                              permission checks (isUsageAccessGranted,
 │   │                              isBatteryOptimizationDisabled)
 │   └── IconGenerator.kt        — 192×192 status bar icon bitmap
 ├── receiver/
@@ -258,7 +255,8 @@ app/src/main/java/com/sdcgroup/speedmeter/
     ├── TopAppBar.kt            — top app bar with Quit action
     ├── UiWidgets.kt            — custom Switch, AppAlertDialog, appButtonShapes(),
     │                              bottom sheet and Help & feedback sheet
-    ├── Theme.kt / Color.kt / Type.kt — Material 3 theming, device corner radius
+    ├── Theme.kt / Color.kt / Type.kt — Material 3 theming, device corner radius,
+    │                              custom bodyLarge typography
     └── WindowSizeClass.kt / WindowSizeDefaults.kt — responsive layout
 
 res/drawable/: ic_notification_down.xml, ic_notification_up.xml,
@@ -294,7 +292,7 @@ DEPENDENCIES
     adaptive-navigation 1.0.0
   • androidx.datastore:datastore-preferences 1.1.1
   • androidx.collection:collection-ktx 1.4.5
-  • org.jetbrains.kotlin:kotlin-stdlib 2.3.21
+  • org.jetbrains.kotlin:kotlin-stdlib 2.1.20
   • org.jetbrains.kotlinx:kotlinx-coroutines-android 1.9.0
 
 

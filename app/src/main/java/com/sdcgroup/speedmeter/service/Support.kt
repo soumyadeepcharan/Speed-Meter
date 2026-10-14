@@ -22,7 +22,7 @@ import com.sdcgroup.speedmeter.BuildConfig
 import com.sdcgroup.speedmeter.R
 import com.sdcgroup.speedmeter.notification.MoreAction
 import com.sdcgroup.speedmeter.notification.MoreItemSpec
-import com.sdcgroup.speedmeter.notification.SettingsSectionBlock
+import com.sdcgroup.speedmeter.notification.MoreSectionBlock
 import com.sdcgroup.speedmeter.ui.AppAlertDialog
 import com.sdcgroup.speedmeter.ui.HelpFeedbackBottomSheet
 
@@ -69,7 +69,7 @@ internal fun SupportSection(modifier: Modifier = Modifier) {
         AboutDialog(onDismiss = { showAboutDialog = false })
     }
 
-    SettingsSectionBlock(
+    MoreSectionBlock(
         title = stringResource(id = R.string.more_section_support),
         items = supportItems,
         onItemAction = ::onItemAction,

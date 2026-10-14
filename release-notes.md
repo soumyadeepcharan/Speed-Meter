@@ -1,33 +1,33 @@
-# Speed Meter v3.0.0
+# Speed Meter v4.0.0
 
-🎉 **Speed Meter v3.0.0 updates the build tools, tidies the settings screen, and makes the notification appear immediately when monitoring starts.**
+🎉 **Speed Meter v4.0.0 steadies the build setup and returns the settings screen to its earlier layout.**
 
 ---
 
 ## What's New
 
-### ⚡ Faster notification start
-- The status bar notification now appears immediately when monitoring starts, without waiting for the system to schedule it.
+### 🧭 Settings screen back to its classic layout
+- The settings page is laid out as before: section titles sit at a standard indent, and the page stops above the navigation bar.
+- The bottom bar used in v3.0.0 has been removed.
+- The indicator switch remains at the top of the settings page.
 
-### 🧭 Cleaner settings screen
-- The indicator switch is now a card at the top of the settings page.
-- Settings sections have a clearer layout, and section titles line up with your phone's screen corners.
-- The page scrolls cleanly above the navigation bar, and a matching bar fills the bottom edge.
-
-### 🎨 Simpler typography
-- The app uses Material 3's standard text styles, so text matches the rest of your system.
-
-### 🔧 Under the hood
-- Updated to Android Gradle Plugin 9.3.1, Kotlin 2.3.21, and Gradle 9.6.1.
-- Kotlin support now comes built into the Android Gradle Plugin.
-- Release builds keep debug symbols for two native libraries, which helps with crash reports.
-- Version bumped to **3.0.0** (version code 14).
+### 🔤 Standard text styling restored
+- Text uses the app's own body style again, matching the look of earlier releases.
 
 ---
 
 ## Changes to Know About
-- Settings section titles, the indicator switch's location, and the bottom bar may look different from v2.0.0.
-- The navigation bar is no longer set to transparent. It is filled with the app's surface color instead.
+- Notifications no longer use the "appear immediately" foreground behavior added in v3.0.0. They appear as before.
+- Settings section titles no longer line up with the screen corner radius. They use a standard indent.
+- The navigation bar area is transparent again, and the settings page keeps its content clear of it.
+
+---
+
+## Under the Hood
+- Build tools rolled back to Android Gradle Plugin 8.11.0, Kotlin 2.1.20, and Gradle 8.14.3 for a more stable build.
+- The Kotlin Android plugin is applied again, with the JVM target set in the Kotlin options.
+- Removed the debug symbol packaging rules added in v3.0.0.
+- Version bumped to **4.0.0** (version code 15).
 
 ---
 

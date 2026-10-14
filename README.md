@@ -16,7 +16,6 @@
 - Each value has a small icon in front of it (down arrow, up arrow, data, and WiFi), so you can tell them apart at a glance.
 - Everything fits on one line in a notification that doesn't expand.
 - The status bar icon shows a live number: total speed, download only, or upload only. You choose.
-- The notification shows up right away when monitoring starts. It is never delayed by the system.
 
 ### Turn it on or off
 - One switch on the home screen starts or stops the whole feature.
@@ -44,7 +43,7 @@
 - On Android 12 and newer, colors match your wallpaper (Material You).
 - Light mode, dark mode, or follow your phone's setting.
 - Screens use the full display edge to edge. Corners follow your phone's screen shape where the phone reports it.
-- The settings page scrolls cleanly above the navigation bar, with a matching bar at the bottom.
+- The settings page stops above the navigation bar, so nothing is hidden behind it.
 - The layout adapts to phones and tablets.
 - The Help & feedback sheet has a visible drag handle, so you can see you can pull it down.
 - The app follows your phone's rotation lock. If rotation is locked, the screen stays where it is.

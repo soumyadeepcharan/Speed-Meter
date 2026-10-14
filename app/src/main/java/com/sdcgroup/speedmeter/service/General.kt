@@ -39,7 +39,7 @@ import com.sdcgroup.speedmeter.R
 import com.sdcgroup.speedmeter.data.ThemeMode
 import com.sdcgroup.speedmeter.notification.MoreAction
 import com.sdcgroup.speedmeter.notification.MoreItemSpec
-import com.sdcgroup.speedmeter.notification.SettingsSectionBlock
+import com.sdcgroup.speedmeter.notification.MoreSectionBlock
 import com.sdcgroup.speedmeter.notification.isBatteryOptimizationDisabled
 import com.sdcgroup.speedmeter.ui.AppAlertDialog
 
@@ -150,7 +150,7 @@ internal fun GeneralSection(
         )
     }
 
-    SettingsSectionBlock(
+    MoreSectionBlock(
         title = stringResource(id = R.string.more_section_general),
         items = generalItems,
         onItemAction = ::onItemAction,
