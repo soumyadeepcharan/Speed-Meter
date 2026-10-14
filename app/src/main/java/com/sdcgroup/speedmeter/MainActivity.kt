@@ -11,23 +11,41 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animate
+import androidx.compose.foundation.LocalOverscrollFactory
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Velocity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.sdcgroup.speedmeter.data.DataUnit
@@ -47,9 +65,11 @@ import com.sdcgroup.speedmeter.notification.NotificationHelper
 import com.sdcgroup.speedmeter.notification.NotificationHelper.Companion.NOTIFICATION_ID
 import com.sdcgroup.speedmeter.service.SpeedMonitorService
 import com.sdcgroup.speedmeter.ui.MyComposeApplicationTheme
-import com.sdcgroup.speedmeter.notification.SpeedMeterHomeMoreContent
+import com.sdcgroup.speedmeter.notification.SpeedMeterSettingsScreen
 import com.sdcgroup.speedmeter.ui.SpeedMeterTopAppBar
+import com.sdcgroup.speedmeter.ui.helpSheetNavBarColor
 import android.app.NotificationManager
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -151,6 +171,50 @@ fun SpeedMeterApp() {
     val scope = rememberCoroutineScope()
     val topAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
+    val dragRangePx = LocalWindowInfo.current.containerSize.height / 3f
+    var expansion by remember { mutableFloatStateOf(0f) }
+    val settleJob = remember { arrayOfNulls<Job>(1) }
+    val expansionConnection = remember(dragRangePx) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < 0f && expansion > 0f && dragRangePx > 0f) {
+                    settleJob[0]?.cancel()
+                    val current = expansion
+                    val next = (current + available.y / dragRangePx).coerceAtLeast(0f)
+                    expansion = next
+                    return Offset(0f, (next - current) * dragRangePx)
+                }
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (available.y > 0f && source == NestedScrollSource.UserInput && expansion < 1f && dragRangePx > 0f) {
+                    settleJob[0]?.cancel()
+                    val current = expansion
+                    val next = (current + available.y / dragRangePx).coerceAtMost(1f)
+                    expansion = next
+                    return Offset(0f, (next - current) * dragRangePx)
+                }
+                return Offset.Zero
+            }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                if (expansion > 0f && expansion < 1f) {
+                    val target = if (expansion >= 0.5f) 1f else 0f
+                    settleJob[0]?.cancel()
+                    settleJob[0] = scope.launch {
+                        animate(expansion, target) { value, _ -> expansion = value }
+                    }
+                }
+                return Velocity.Zero
+            }
+        }
+    }
+
     val themeModeFlow = remember { themeModeFlow(context) }
     val themeMode by themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
 
@@ -182,33 +246,59 @@ fun SpeedMeterApp() {
     }
 
     MyComposeApplicationTheme(themeMode = themeMode) {
-        Scaffold(
-            modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
-            topBar = {
-                SpeedMeterTopAppBar(
-                    title = stringResource(id = R.string.app_name),
-                    themeMode = themeMode,
-                    onQuitClick = { quitApp(activity) },
-                    scrollBehavior = topAppBarScrollBehavior
-                )
-            }
-        ) { innerPadding ->
-            SpeedMeterHomeMoreContent(
-                themeMode = themeMode,
-                onThemeModeSelected = ::onThemeModeSelected,
-                speedUnit = speedUnit,
-                onSpeedUnitSelected = ::onSpeedUnitSelected,
-                dataUnit = dataUnit,
-                onDataUnitSelected = ::onDataUnitSelected,
+        val navBarColor = helpSheetNavBarColor ?: MaterialTheme.colorScheme.background
+        val sheetScrim by animateColorAsState(
+            targetValue = if (helpSheetNavBarColor != null) {
+                MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f)
+            } else {
+                Color.Transparent
+            },
+            label = "sheetScrim"
+        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(
-                        start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
-                        top = innerPadding.calculateTopPadding(),
-                        end = innerPadding.calculateEndPadding(LocalLayoutDirection.current)
+                    .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                    .nestedScroll(expansionConnection),
+                containerColor = MaterialTheme.colorScheme.background,
+                topBar = {
+                    SpeedMeterTopAppBar(
+                        title = stringResource(id = R.string.app_name),
+                        themeMode = themeMode,
+                        onQuitClick = { quitApp(activity) },
+                        scrollBehavior = topAppBarScrollBehavior,
+                        expansion = expansion
                     )
+                },
+                bottomBar = {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .windowInsetsBottomHeight(WindowInsets.navigationBars)
+                            .background(navBarColor)
+                    )
+                }
+            ) { innerPadding ->
+                CompositionLocalProvider(LocalOverscrollFactory provides null) {
+                    SpeedMeterSettingsScreen(
+                        themeMode = themeMode,
+                        onThemeModeSelected = ::onThemeModeSelected,
+                        speedUnit = speedUnit,
+                        onSpeedUnitSelected = ::onSpeedUnitSelected,
+                        dataUnit = dataUnit,
+                        onDataUnitSelected = ::onDataUnitSelected,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
+                    .background(sheetScrim)
             )
         }
     }

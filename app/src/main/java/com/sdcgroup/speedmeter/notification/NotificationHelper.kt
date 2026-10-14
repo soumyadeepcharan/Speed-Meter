@@ -44,11 +44,13 @@ class NotificationHelper(private val context: Context) {
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(IconCompat.createWithBitmap(iconBitmap))
             .setCustomContentView(updateRemoteViews(speed, totalDataUsage, wifiDataUsage))
+            .setCustomBigContentView(updateRemoteViews(speed, totalDataUsage, wifiDataUsage))
             .setOngoing(true)
             .setLocalOnly(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
     }
 

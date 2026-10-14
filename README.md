@@ -15,13 +15,18 @@
 - Shows **today's data usage** for mobile data and WiFi, separately.
 - Each value has a small icon in front of it (down arrow, up arrow, data, and WiFi), so you can tell them apart at a glance.
 - Everything fits on one line in a notification that doesn't expand.
+- The notification appears right away when monitoring starts.
 - The status bar icon shows a live number: total speed, download only, or upload only. You choose.
 
 ### Turn it on or off
-- One switch on the home screen starts or stops the whole feature.
+- One switch at the top of the settings page starts or stops the whole feature.
 - It's off when you first install the app.
 - Android asks for notification permission only when you turn the indicator on.
 - The **Quit** button in the top bar stops monitoring and removes the notification straight away.
+
+### Find the settings easily
+- Pull down on the header to open the expanded top bar. The app name appears in the larger header, and the page dims slightly behind it.
+- Scroll the settings page as usual. Long lists keep the top bar steady.
 
 ### Choose how numbers look
 - **Speed units:** bytes per second (KB/s, MB/s) or bits per second (Kb/s, Mb/s).
@@ -43,7 +48,7 @@
 - On Android 12 and newer, colors match your wallpaper (Material You).
 - Light mode, dark mode, or follow your phone's setting.
 - Screens use the full display edge to edge. Corners follow your phone's screen shape where the phone reports it.
-- The settings page stops above the navigation bar, so nothing is hidden behind it.
+- The navigation bar area matches the screen background, so the bottom edge looks clean.
 - The layout adapts to phones and tablets.
 - The Help & feedback sheet has a visible drag handle, so you can see you can pull it down.
 - The app follows your phone's rotation lock. If rotation is locked, the screen stays where it is.
@@ -68,7 +73,7 @@
 
 ## How to Use
 
-1. Open the app and turn on the **indicator** switch on the home screen.
+1. Open the app and turn on the **indicator** switch at the top of the settings page.
 2. Allow notifications when asked. The indicator appears right away.
 3. Open **Notification settings** to choose:
    - Speed units
@@ -85,7 +90,7 @@
 ## Troubleshooting
 
 **The indicator isn't showing**
-- Make sure the indicator switch on the home screen is on.
+- Make sure the indicator switch at the top of the settings page is on.
 - Make sure notifications are allowed for Speed Meter in Android's settings.
 
 **Daily data looks wrong**
@@ -101,7 +106,7 @@
 - Values longer than the space available end with "…". Use a shorter unit (for example, MB/s instead of KB/s) to make them fit.
 
 **I tapped Quit by accident**
-- Turn the indicator switch on again on the home screen to start it.
+- Turn the indicator switch on again at the top of the settings page to start it.
 
 ---
 

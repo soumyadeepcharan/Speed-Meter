@@ -1,33 +1,44 @@
-# Speed Meter v4.0.0
+# Speed Meter v5.0.0
 
-🎉 **Speed Meter v4.0.0 steadies the build setup and returns the settings screen to its earlier layout.**
+🎉 **Speed Meter v5.0.0 adds an expanding top bar, a softer scrim behind the Help sheet, and a cleaner bottom edge, and it updates the build tools.**
 
 ---
 
 ## What's New
 
-### 🧭 Settings screen back to its classic layout
-- The settings page is laid out as before: section titles sit at a standard indent, and the page stops above the navigation bar.
-- The bottom bar used in v3.0.0 has been removed.
-- The indicator switch remains at the top of the settings page.
+### 📱 Expanding top bar
+- Pull down on the header to expand the top bar. The app name grows into a larger title as you pull.
+- Release partway and the header settles open or closed on its own.
+- The Quit button moves with the header, so it stays easy to reach.
 
-### 🔤 Standard text styling restored
-- Text uses the app's own body style again, matching the look of earlier releases.
+### 🌫️ Scrim behind the Help sheet
+- When the Help & feedback sheet is open, the page behind it dims softly so the sheet stands out.
+- The sheet's bottom edge matches the navigation bar, so the transition looks seamless.
 
----
+### 🧭 Cleaner bottom edge
+- The area behind the navigation bar now blends with the page or sheet color.
+- The settings page no longer stretches past its edge when you scroll to the end.
 
-## Changes to Know About
-- Notifications no longer use the "appear immediately" foreground behavior added in v3.0.0. They appear as before.
-- Settings section titles no longer line up with the screen corner radius. They use a standard indent.
-- The navigation bar area is transparent again, and the settings page keeps its content clear of it.
+### 🔤 Standard text styling
+- Text uses Material 3's standard styles, so it matches the rest of your system.
+
+### 🔔 Richer notification
+- The notification now includes an expanded layout, so the four values stay readable in the expanded view.
+- The notification appears immediately when monitoring starts.
 
 ---
 
 ## Under the Hood
-- Build tools rolled back to Android Gradle Plugin 8.11.0, Kotlin 2.1.20, and Gradle 8.14.3 for a more stable build.
-- The Kotlin Android plugin is applied again, with the JVM target set in the Kotlin options.
-- Removed the debug symbol packaging rules added in v3.0.0.
-- Version bumped to **4.0.0** (version code 15).
+- Build tools updated to Android Gradle Plugin 9.3.1, Kotlin 2.3.21, and Gradle 9.6.1.
+- Kotlin support is built into the Android Gradle Plugin.
+- Settings sections align with your phone's corner radius again.
+- Version bumped to **5.0.0** (version code 16).
+
+---
+
+## Changes to Know About
+- Pulling down on the header changes the layout of the top bar. Tap Quit or pull back up to return it to normal.
+- Settings section titles line up with your screen corners again.
 
 ---
 

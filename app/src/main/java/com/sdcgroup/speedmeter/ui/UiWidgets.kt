@@ -87,7 +87,15 @@ import androidx.compose.ui.window.DialogProperties
 import com.sdcgroup.speedmeter.BuildConfig
 import com.sdcgroup.speedmeter.R
 import kotlin.math.roundToInt
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.core.view.WindowCompat
+import androidx.compose.runtime.DisposableEffect
 import kotlinx.coroutines.launch
+
+internal var helpSheetNavBarColor by mutableStateOf<Color?>(null)
 
 private const val ActionHoverStateLayerOpacity = 0.08f
 private const val ActionFocusStateLayerOpacity = 0.10f
@@ -326,10 +334,17 @@ internal fun HelpFeedbackBottomSheet(onDismiss: () -> Unit) {
     )
     val density = LocalDensity.current
     val sectionShape = MaterialTheme.shapes.extraLarge
+    val sheetColor = MaterialTheme.colorScheme.surfaceContainerLow
+    DisposableEffect(sheetColor) {
+        helpSheetNavBarColor = sheetColor
+        onDispose { helpSheetNavBarColor = null }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        containerColor = sheetColor,
+        scrimColor = Color.Transparent,
         shape = sectionShape.copy(
             bottomStart = ZeroCornerSize,
             bottomEnd = ZeroCornerSize
@@ -337,6 +352,18 @@ internal fun HelpFeedbackBottomSheet(onDismiss: () -> Unit) {
         dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = Modifier.semantics { contentDescription = dialogLabel },
     ) {
+        val sheetView = LocalView.current
+        SideEffect {
+            val sheetWindow = (sheetView.parent as? DialogWindowProvider)?.window
+                ?: (sheetView as? DialogWindowProvider)?.window
+            if (sheetWindow != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    sheetWindow.isNavigationBarContrastEnforced = false
+                }
+                WindowCompat.getInsetsController(sheetWindow, sheetView)
+                    .isAppearanceLightNavigationBars = sheetColor.luminance() > 0.5f
+            }
+        }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
