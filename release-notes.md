@@ -1,52 +1,55 @@
-# Speed Meter v1.0.0
+# Speed Meter v2.0.0
 
-🎉 **Speed Meter v1.0.0 is the first stable release.** Notification text now fits your screen, the app starts reliably after a restart, and the Quit button and dialog buttons have a new look.
+🎉 **Speed Meter v2.0.0 redesigns the status bar notification with icons, uses the full screen edge to edge, and matches corners to your phone's screen.**
 
 ---
 
 ## What's New
 
-### 🔔 Adaptive notification text
-- The Down, Up, Data, and WiFi values shrink their text automatically (from 13sp down to 7sp) when a value is too long.
-- Long values stay readable instead of being cut off.
-- Tighter spacing and no extra font padding use the available width better.
+### 🔔 Icon-led notification
+- Download, upload, data, and WiFi each have their own icon, so you can read the notification at a glance.
+- The four values sit in equal-width columns on one line.
+- Notification text is now dark on light themes and light on dark themes.
 
-### 🚀 More reliable start on boot
-- With **Start on boot** on, the indicator now starts after every restart.
-- This works even if you quit the app or turned the indicator off before shutting down.
+### 🖼️ Edge-to-edge screens
+- The app draws behind the status bar and navigation bar.
+- The Settings screen keeps its bottom content clear of the navigation bar.
+- Status and navigation bar icons follow your light or dark theme.
 
-### ⏻ Clearer Kill Service button
-- The top bar button is now a labeled **Kill Service** button.
-- It uses the app's error color and a power-off icon, so its purpose is obvious.
+### 📐 Corners that match your phone
+- On Android 12 and newer, the app reads your screen's corner radius and uses it for buttons, dialogs, and sheets.
+- Older devices and devices that don't report it use a standard 28dp corner.
+- The Help & feedback sheet has square bottom corners so it sits neatly at the screen edge.
 
-### 🎨 Refreshed buttons and Help sheet
-- Dialog confirm buttons (such as **Close**) are now filled buttons.
-- The Help & feedback sheet has a drag handle again.
-- The sheet's height accounts for the status bar, so it fits better on every screen.
-- Help options have larger rounded corners.
+### ⏻ Compact Quit button
+- The top bar button is now a compact red **Quit** button with a fixed width, so the top bar stays steady.
+- The indicator's Notification settings button has been removed.
 
-### 🔒 Rotation follows your settings
-- The app follows your phone's rotation lock instead of always rotating with the sensor.
-- If rotation is locked, the app stays in its current orientation.
+### 🔄 Notification stays current on rotation and theme changes
+- The notification is rebuilt straight away when the screen configuration changes, so it never shows an outdated layout.
+
+### 🎛️ Track and thumb colors
+- The switch's track and thumb colors now change instantly when toggled.
 
 ---
 
-## Fixes & Improvements
-- Removed haptic feedback from the toggle switch for a calmer feel.
-- Simplified dialog code so dialogs behave consistently.
+## Changes to Know About
+- Long values in the notification are now cut off with "…" at a fixed text size. The adaptive text sizing from v1.0.0 has been replaced.
+- The top bar button now reads **Quit** instead of **Kill Service**. It does the same thing: it stops monitoring and removes the notification.
 
 ---
 
 ## Under the Hood
-- Settings code is split into focused files: `Indicator.kt`, `NotificationSettings.kt`, `NotificationLayout.kt`, `General.kt`, and `Support.kt`.
-- `HomeScreen.kt` was removed and its contents moved into those files.
-- The Help & feedback sheet moved into the shared widgets file.
-- Version bumped to **1.0.0** (version code 12).
+- Last notification state is cached in the monitoring service.
+- Shape tokens are derived from the device's corner radius.
+- Removed the unused settings icon drawable.
+- Version bumped to **2.0.0** (version code 13).
 
 ---
 
 ## Compatibility
 - Requires **Android 8.0 (Oreo)** or newer.
+- Device-matched corners need **Android 12** or newer. Older versions use the standard corner.
 
 ---
 

@@ -49,7 +49,7 @@
     <string name="more_battery_optimization_subtitle_enabled">Battery optimization must be disabled for working in background</string>
     <string name="more_battery_optimization_subtitle_disabled">Battery optimization is already disabled</string>
 
-    <string name="quit_button_label">Kill Service</string>
+        <string name="quit_button_label">Quit</string>
 
     <string name="more_section_support">Support</string>
     <string name="more_help_title">Help &amp; feedback</string>
@@ -72,8 +72,6 @@
     <string name="theme_dialog_label">Choose theme</string>
     <string name="speed_unit_dialog_label">Choose speed unit</string>
     <string name="data_unit_dialog_label">Choose data usage unit</string>
-
-    <string name="notif_settings_button">Notification settings</string>
 
     <string name="email_bug_report_subject">[Enter A Brief Subject For The Issue]</string>
     <string name="email_bug_report_body"><![CDATA[Dear Developer,

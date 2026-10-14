@@ -4,6 +4,8 @@ import android.app.AppOpsManager
 import android.app.Service
 import android.app.usage.NetworkStatsManager
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.net.TrafficStats
 import android.os.IBinder
 import android.os.Process
@@ -49,6 +51,11 @@ class SpeedMonitorService : Service() {
     private var lastTimestamp = 0L
     private var isMonitoring = false
 
+    private var lastSpeed: Speed? = null
+    private var lastIcon: Bitmap? = null
+    private var lastTotalData: String? = null
+    private var lastWifiData: String? = null
+
     private var currentSpeedUnit = SpeedUnit.BYTES_PER_SECOND
     private var currentDataUnit = DataUnit.BYTES_BINARY
     private var currentIconSpeedType = IconSpeedType.TOTAL
@@ -78,19 +85,21 @@ class SpeedMonitorService : Service() {
             return START_NOT_STICKY
         }
 
-        val initialSpeed = Speed(
+        val initialSpeed = lastSpeed ?: Speed(
             down = formatSpeed(0L, currentSpeedUnit),
             up = formatSpeed(0L, currentSpeedUnit),
             total = formatSpeed(0L, currentSpeedUnit)
         )
-        val initialIcon = iconGenerator.generateIcon(initialSpeed.total)
+        val initialIcon = lastIcon ?: iconGenerator.generateIcon(initialSpeed.total)
+        val initialTotalData = lastTotalData ?: formatDataUsage(0L, currentDataUnit)
+        val initialWifiData = lastWifiData ?: formatDataUsage(0L, currentDataUnit)
         startForeground(
             NotificationHelper.NOTIFICATION_ID,
             notificationHelper.buildNotification(
                 initialSpeed,
                 initialIcon,
-                formatDataUsage(0L, currentDataUnit),
-                formatDataUsage(0L, currentDataUnit)
+                initialTotalData,
+                initialWifiData
             )
         )
 
@@ -106,6 +115,10 @@ class SpeedMonitorService : Service() {
                     val (dataUsage, wifiUsage) = getTodayUsage()
                     val totalDataUsage = formatDataUsage(dataUsage, currentDataUnit)
                     val wifiDataUsage = formatDataUsage(wifiUsage, currentDataUnit)
+                    lastSpeed = speed
+                    lastIcon = icon
+                    lastTotalData = totalDataUsage
+                    lastWifiData = wifiDataUsage
                     notificationHelper.notify(speed, icon, totalDataUsage, wifiDataUsage)
                     delay(1000)
                 }
@@ -244,6 +257,15 @@ class SpeedMonitorService : Service() {
             up = formatSpeed(upBytesPerSecond, currentSpeedUnit),
             total = formatSpeed(downBytesPerSecond + upBytesPerSecond, currentSpeedUnit)
         )
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val speed = lastSpeed ?: return
+        val icon = lastIcon ?: return
+        val totalData = lastTotalData ?: return
+        val wifiData = lastWifiData ?: return
+        notificationHelper.notify(speed, icon, totalData, wifiData)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

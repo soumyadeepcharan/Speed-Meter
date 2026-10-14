@@ -1,7 +1,7 @@
 Speed Meter - Changelog & Technical Documentation
 ===================================================
 
-[Version 1.0.0] - Current Release (versionName 1.0.0, versionCode 12)
+[Version 2.0.0] - Current Release (versionName 2.0.0, versionCode 13)
 -----------------------------------------------------------------------
 
 OVERVIEW
@@ -26,35 +26,46 @@ UI:
     material3 1.5.0-alpha03)
   • Opt-in APIs: ExperimentalMaterial3Api, ExperimentalMaterial3ExpressiveApi
   • Material 3 Expressive animated-shape buttons (ButtonDefaults.shapes())
-    on the Kill Service button and dialog confirm buttons
+    through the shared appButtonShapes() helper: a rounded resting shape that
+    morphs on press
   • Material Icons (core and extended)
-  • Custom components: gesture-driven Switch (thumb follows the finger, with
-    a cross-fade between check and close icons), scrollable AppAlertDialog,
-    and WindowSizeClass-based responsive layout
+  • Edge-to-edge rendering (enableEdgeToEdge) with transparent status and
+    navigation bars; status and navigation bar icon contrast follows the theme
+  • Device-matched corner shapes: the corner radius is read from
+    View.Display.getRoundedCorner() on Android 12+ and used for all Material
+    shape tokens; falls back to 28dp when unavailable
+  • Custom components: gesture-driven Switch (thumb follows the finger),
+    AppAlertDialog, bottom sheet helpers, and WindowSizeClass-based responsive
+    layout
   • Dynamic Color (Material You) on Android 12+, with static light and dark
     fallback schemes
   • Bottom sheet drag handle (BottomSheetDefaults.DragHandle()), with sheet
-    height that accounts for the status bar
+    height that accounts for the status bar and square bottom corners
   • Orientation follows the system rotation lock (screenOrientation="user")
 
 State & Data:
   • Jetpack DataStore Preferences for all settings and daily-usage baselines
   • Kotlin Coroutines and Flow for async work and reactive state
   • rememberSaveable for dialog and UI state across configuration changes
+  • Last speed, icon, and usage strings cached in SpeedMonitorService so the
+    notification can be rebuilt on configuration changes without waiting for
+    the next tick
 
 System Integration:
   • TrafficStats API: real-time speed from byte-counter deltas
   • NetworkStatsManager: per-day mobile and WiFi totals. Falls back to a
     TrafficStats-based daily baseline when Usage Access isn't granted.
   • Foreground service (dataSync type) with a RemoteViews notification
+  • Configuration-change handling in the service re-posts the notification
+    (onConfigurationChanged)
   • BroadcastReceiver for BOOT_COMPLETED (optional auto-start)
   • AppOpsManager.checkOpNoThrow for Usage Access checks
   • PowerManager for battery optimization status
   • Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS to request the
-    exemption. Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS opens
-    the system exemption list so the user can revoke it. Android has no API
-    for an app to revoke its own exemption, so this is a deep link, not a
-    one-tap action.
+    exemption. Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS opens the
+    system exemption list so the user can revoke it. Android has no API for
+    an app to revoke its own exemption, so this is a deep link, not a one-tap
+    action.
   • androidx.lifecycle.compose.LocalLifecycleOwner
 
 Build System:
@@ -72,17 +83,20 @@ FEATURES TO DATE
   • Total speed = download + upload
   • Handles TrafficStats.UNSUPPORTED and negative or decreasing counters
   • Display unit: bytes per second (B/s to GB/s) or bits per second
-    (b/s to Gb/s), via the shared scaledMagnitude() helper with
-    boundary-safe rounding (e.g. 999.99 KB/s doesn't roll into a wrong unit)
+    (b/s to Gb/s), via the shared scaledMagnitude() helper with boundary-safe
+    rounding (e.g. 999.99 KB/s doesn't roll into a wrong unit)
   • Below 1 MB/s or 1 Mb/s, values show as integers. Data and WiFi usage
     always show up to two decimal places.
 
 ✅ Persistent Status Bar Notification
-  • One non-expandable line: Down, Up, Data, WiFi, from a custom RemoteViews
-    layout (notification_layout.xml)
-  • Each field is a weighted column (layout_weight = 1) with adaptive text
-    (uniform autosize, 13sp max down to 7sp min, 1sp steps) and no extra
-    font padding, so long values shrink instead of being cut off
+  • One non-expandable line with four icon-led columns: download, upload,
+    data, WiFi. Built from notification_layout.xml (RemoteViews) with
+    equal-weight columns (LinearLayout weightSum = 4).
+  • Each column: a 16sp icon in a rounded 4dp background (bg_notification_icon)
+    with a vector drawable (ic_notification_down, _up, _data, _wifi), followed
+    by a single-line TextView at 14sp with ellipsize="end"
+  • Value text colors come from theme tokens: notification_value_color is
+    #000000 in light mode and #FFFFFF in dark mode
   • Status bar icon: 192×192 ARGB bitmap (IconGenerator), with auto-shrink
     digit sizing and spacing measured from glyph bounds (getTextBounds())
   • Icon speed source is user-selectable: total, download only, or upload
@@ -103,14 +117,16 @@ FEATURES TO DATE
 ✅ Indicator Enable/Disable
   • One home screen toggle starts and stops the foreground service
   • Custom Switch with live thumb tracking during drag (awaitEachGesture),
-    not just tap-to-toggle
+    not just tap-to-toggle. Track and thumb colors switch instantly with the
+    checked state.
   • Off by default on first install
   • POST_NOTIFICATIONS requested only when enabling (API 33+)
-  • Kill Service button in the top app bar: filled icon-and-label button in
-    the error color (PowerOff icon, shape-animated). It stops the service,
+  • Quit button in the top app bar: a compact 52×32dp filled button in the
+    error color, centered in a reserved 108dp slot. It stops the service,
     cancels the notification, and ends the process.
 
-✅ Settings Screen (single scrollable column)
+✅ Settings Screen (single scrollable column, bottom padding respects the
+   navigation bar)
   • Notification settings
     - Opens Android's per-app notification settings
     - Speed units (Bytes/sec or Bits/sec)
@@ -132,15 +148,18 @@ FEATURES TO DATE
       Both open a pre-filled email. Bug reports include app version, device
       model, device name, and Android version.
     - About dialog with app version
-  • Option rows are clipped to MaterialTheme.shapes.extraLarge so ripples
-    follow the rounded design
+  • Option rows and dialogs use MaterialTheme.shapes.extraLarge, so ripples
+    and corners follow the rounded design
 
 ✅ Theming
   • Material 3 light and dark schemes with Material You dynamic color on
     Android 12+
+  • Shape tokens (extraSmall through extraLarge) all use the device-matched
+    corner radius
   • Theme state comes from one collector; key(themeMode) on the top app bar
     avoids visible lag when switching themes
-  • Status and navigation bar icon appearance follows the active theme
+  • Status and navigation bar icon appearance follows the active theme;
+    navigation bar contrast enforcement is disabled on Android 10+
 
 ✅ Responsive Layout
   • WindowWidthSizeClass and WindowHeightSizeClass (ExtraCompact through
@@ -165,8 +184,8 @@ ARCHITECTURE
 -------------
 
 Single-Activity, Service-Backed:
-  • MainActivity: single entry point. Hosts the Compose UI and handles
-    initial permission and service bootstrap.
+  • MainActivity: single entry point. Hosts the Compose UI, enables
+    edge-to-edge, and handles initial permission and service bootstrap.
   • SpeedMonitorService: foreground service that owns the monitoring loop,
     independent of the UI lifecycle
   • NotificationHelper: channel creation and RemoteViews notification
@@ -176,6 +195,8 @@ Data Flow:
   TrafficStats (deltas) → speed calculation → formatSpeed() → notification
   NetworkStatsManager or TrafficStats baseline → getTodayUsage() →
   formatDataUsage() → notification
+  Last notification state cached in the service → rebuilt on
+  onConfigurationChanged
   DataStore Flows → service and UI state (speed unit, data unit, icon type,
   indicator enabled, start on boot, quit requested, daily baseline)
 
@@ -190,9 +211,11 @@ FILE STRUCTURE
 ---------------
 
 app/src/main/java/com/sdcgroup/speedmeter/
-├── MainActivity.kt             — entry point, permission bootstrap, app shell
+├── MainActivity.kt             — entry point, edge-to-edge, permission
+│                                  bootstrap, app shell
 ├── service/
-│   ├── SpeedMonitorService.kt  — foreground service: speed and usage loop
+│   ├── SpeedMonitorService.kt  — foreground service: speed and usage loop,
+│   │                              cached notification state
 │   ├── General.kt              — General settings (theme, start on boot,
 │   │                              battery optimization)
 │   └── Support.kt              — Support settings (help and feedback, about)
@@ -211,18 +234,22 @@ app/src/main/java/com/sdcgroup/speedmeter/
 │   └── SettingsDataStore.kt    — DataStore keys, flows, enums (ThemeMode,
 │                                  SpeedUnit, DataUnit, IconSpeedType)
 └── ui/
-    ├── TopAppBar.kt            — top app bar with Kill Service action
-    ├── UiWidgets.kt            — custom Switch, AppAlertDialog, bottom sheet
-    │                              and Help & feedback sheet
-    ├── Theme.kt / Color.kt / Type.kt — Material 3 theming
+    ├── TopAppBar.kt            — top app bar with Quit action
+    ├── UiWidgets.kt            — custom Switch, AppAlertDialog, appButtonShapes(),
+    │                              bottom sheet and Help & feedback sheet
+    ├── Theme.kt / Color.kt / Type.kt — Material 3 theming, device corner radius
     └── WindowSizeClass.kt / WindowSizeDefaults.kt — responsive layout
 
-Removed in 1.0.0: ui/HomeScreen.kt (its contents moved to the files above).
+res/drawable/: ic_notification_down.xml, ic_notification_up.xml,
+ic_notification_data.xml, ic_notification_wifi.xml, bg_notification_icon.xml
+(the settings gear icon ic_settings_black_24dp.xml was removed in 2.0.0)
 
 
 KNOWN LIMITATIONS
 -------------------
 • Speed reflects system-wide TrafficStats, not per-app traffic
+• Notification values use a fixed 14sp size with ellipsis. Very long values
+  are cut off with "…" (the adaptive-size behavior from 1.0.0 was replaced).
 • Without Usage Access, daily usage is an estimate from a stored baseline,
   not full system accounting
 • Only "today" totals. No history or graphs.

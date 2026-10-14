@@ -13,14 +13,15 @@
 ### Live speed in your status bar
 - Shows your current **download** and **upload** speed, updated every second.
 - Shows **today's data usage** for mobile data and WiFi, separately.
+- Each value has a small icon in front of it (down arrow, up arrow, data, and WiFi), so you can tell them apart at a glance.
 - Everything fits on one line in a notification that doesn't expand.
-- The status bar icon shows a live number: total speed, download only, or upload only. You choose. Longer numbers shrink to fit so nothing gets cut off.
+- The status bar icon shows a live number: total speed, download only, or upload only. You choose.
 
 ### Turn it on or off
 - One switch on the home screen starts or stops the whole feature.
 - It's off when you first install the app.
 - Android asks for notification permission only when you turn the indicator on.
-- The **Kill Service** button in the top bar stops monitoring and removes the notification straight away.
+- The **Quit** button in the top bar stops monitoring and removes the notification straight away.
 
 ### Choose how numbers look
 - **Speed units:** bytes per second (KB/s, MB/s) or bits per second (Kb/s, Mb/s).
@@ -41,6 +42,7 @@
 - Built with Material Design 3, including its newer expressive style. Buttons change shape smoothly when pressed.
 - On Android 12 and newer, colors match your wallpaper (Material You).
 - Light mode, dark mode, or follow your phone's setting.
+- Screens use the full display edge to edge. Corners follow your phone's screen shape where the phone reports it.
 - The layout adapts to phones and tablets.
 - The Help & feedback sheet has a visible drag handle, so you can see you can pull it down.
 - The app follows your phone's rotation lock. If rotation is locked, the screen stays where it is.
@@ -75,7 +77,7 @@
 5. Turn on **Start on boot** so monitoring resumes after a restart.
 6. Turn off **Battery optimization** for Speed Meter so Android doesn't pause it.
 7. Pick a **theme** (system, light, or dark) in General settings.
-8. To stop everything quickly, tap **Kill Service** in the top bar.
+8. To stop everything quickly, tap **Quit** in the top bar.
 
 ---
 
@@ -94,7 +96,10 @@
 - Turn on **Start on boot** so it returns after a restart.
 - Some phone makers add extra background limits. Check your phone's battery settings for Speed Meter.
 
-**I tapped Kill Service by accident**
+**Long numbers are cut off in the notification**
+- Values longer than the space available end with "…". Use a shorter unit (for example, MB/s instead of KB/s) to make them fit.
+
+**I tapped Quit by accident**
 - Tap **Enable indicator** on the home screen to start it again.
 
 ---

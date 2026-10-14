@@ -67,19 +67,19 @@ class NotificationHelper(private val context: Context) {
         val remoteViews = RemoteViews(context.packageName, R.layout.notification_layout)
         remoteViews.setTextViewText(
             R.id.notificationDownText,
-            "${context.getString(R.string.download_label)}: ${speed.down.speedValue}${speed.down.speedUnit}"
+            "${speed.down.speedValue}${speed.down.speedUnit}"
         )
         remoteViews.setTextViewText(
             R.id.notificationUpText,
-            "${context.getString(R.string.upload_label)}: ${speed.up.speedValue}${speed.up.speedUnit}"
+            "${speed.up.speedValue}${speed.up.speedUnit}"
         )
         remoteViews.setTextViewText(
             R.id.notificationDataText,
-            "${context.getString(R.string.data_label)}: $totalDataUsage"
+            totalDataUsage
         )
         remoteViews.setTextViewText(
             R.id.notificationWifiText,
-            "${context.getString(R.string.wifi_label)}: $wifiDataUsage"
+            wifiDataUsage
         )
         return remoteViews
     }

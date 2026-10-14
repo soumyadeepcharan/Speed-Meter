@@ -33,6 +33,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -45,6 +47,7 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ButtonShapes
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -122,17 +125,9 @@ fun Switch(
         label = "switchThumbOffset"
     )
 
-    val trackColor by animateColorAsState(
-        targetValue = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-        animationSpec = spring(stiffness = Spring.StiffnessHigh),
-        label = "switchTrackColor"
-    )
+    val trackColor = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
 
-    val thumbColor by animateColorAsState(
-        targetValue = if (checked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.outline,
-        animationSpec = spring(stiffness = Spring.StiffnessHigh),
-        label = "switchThumbColor"
-    )
+    val thumbColor = if (checked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.outline
 
     val progress = if (maxOffsetPx > 0f) {
         (animatedOffsetPx / maxOffsetPx).coerceIn(0f, 1f)
@@ -228,7 +223,17 @@ data class AppAlertDialogOption(
 private val CenteredDialogProperties = DialogProperties(decorFitsSystemWindows = true)
 
 @Composable
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+fun appButtonShapes(): ButtonShapes {
+    val sectionShape = MaterialTheme.shapes.extraLarge
+    return ButtonDefaults.shapes(
+        shape = sectionShape,
+        pressedShape = sectionShape.copy(all = CornerSize(30))
+    )
+}
+
+@Composable
+@OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 fun AppAlertDialog(
     onDismissRequest: () -> Unit,
     title: String,
@@ -244,6 +249,7 @@ fun AppAlertDialog(
     AlertDialog(
         modifier = Modifier.semantics { contentDescription = dialogLabel },
         onDismissRequest = onDismissRequest,
+        shape = MaterialTheme.shapes.extraLarge,
         properties = CenteredDialogProperties,
         icon = {
             Icon(
@@ -265,12 +271,12 @@ fun AppAlertDialog(
             }
         },
         confirmButton = {
-            Button(onClick = onConfirm, shapes = ButtonDefaults.shapes()) { Text(confirmButtonLabel) }
+            Button(onClick = onConfirm, shapes = appButtonShapes()) { Text(confirmButtonLabel) }
         },
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun HelpFeedbackBottomSheet(onDismiss: () -> Unit) {
     val context = LocalContext.current
@@ -319,10 +325,15 @@ internal fun HelpFeedbackBottomSheet(onDismiss: () -> Unit) {
         label = "helpSheetSharedAxisY"
     )
     val density = LocalDensity.current
+    val sectionShape = MaterialTheme.shapes.extraLarge
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        shape = sectionShape.copy(
+            bottomStart = ZeroCornerSize,
+            bottomEnd = ZeroCornerSize
+        ),
         dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = Modifier.semantics { contentDescription = dialogLabel },
     ) {
