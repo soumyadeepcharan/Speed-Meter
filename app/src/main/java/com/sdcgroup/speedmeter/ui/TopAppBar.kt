@@ -62,7 +62,7 @@ fun SpeedMeterTopAppBar(
                     title,
                     modifier = Modifier
                         .padding(start = 16.dp)
-                        .offset { IntOffset(0, -(extraPx / 2f).roundToInt()) }
+                        .offset { IntOffset(0, (extraPx / 2f).roundToInt()) }
                         .graphicsLayer { alpha = titleOutAlpha }
                 )
             },

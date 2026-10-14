@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -88,7 +89,8 @@ fun SpeedMeterSettingsScreen(
     onSpeedUnitSelected: (SpeedUnit, () -> Unit) -> Unit,
     dataUnit: DataUnit,
     onDataUnitSelected: (DataUnit, () -> Unit) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    scrollState: ScrollState = rememberScrollState()
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -117,9 +119,9 @@ fun SpeedMeterSettingsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 8.dp)
                 .clip(MaterialTheme.shapes.extraLarge)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {

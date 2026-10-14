@@ -44,6 +44,14 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.rememberScrollState
+import kotlin.math.abs
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Velocity
 import androidx.core.content.ContextCompat
@@ -215,6 +223,11 @@ fun SpeedMeterApp() {
         }
     }
 
+    val density = LocalDensity.current
+    val statusTopPx = WindowInsets.statusBars.getTop(density).toFloat()
+    val navBottomPx = WindowInsets.navigationBars.getBottom(density).toFloat()
+    val settingsScrollState = rememberScrollState()
+
     val themeModeFlow = remember { themeModeFlow(context) }
     val themeMode by themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
 
@@ -255,7 +268,58 @@ fun SpeedMeterApp() {
             },
             label = "sheetScrim"
         )
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(dragRangePx, statusTopPx, navBottomPx, settingsScrollState) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(
+                            requireUnconsumed = false,
+                            pass = PointerEventPass.Initial
+                        )
+                        if (down.position.y < statusTopPx || down.position.y > size.height - navBottomPx) {
+                            return@awaitEachGesture
+                        }
+                        val slop = viewConfiguration.touchSlop
+                        var total = 0f
+                        var active = false
+                        var moved = false
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Final)
+                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                            if (!change.pressed) break
+                            if (change.isConsumed) {
+                                total = 0f
+                                active = false
+                                continue
+                            }
+                            val dy = change.position.y - change.previousPosition.y
+                            total += dy
+                            if (!active && abs(total) > slop) active = true
+                            if (active && dy != 0f && dragRangePx > 0f) {
+                                if (dy > 0f && settingsScrollState.value == 0 && expansion < 1f) {
+                                    settleJob[0]?.cancel()
+                                    expansion = (expansion + dy / dragRangePx).coerceAtMost(1f)
+                                    moved = true
+                                    change.consume()
+                                } else if (dy < 0f && expansion > 0f) {
+                                    settleJob[0]?.cancel()
+                                    expansion = (expansion + dy / dragRangePx).coerceAtLeast(0f)
+                                    moved = true
+                                    change.consume()
+                                }
+                            }
+                        }
+                        if (moved && expansion > 0f && expansion < 1f) {
+                            val target = if (expansion >= 0.5f) 1f else 0f
+                            settleJob[0]?.cancel()
+                            settleJob[0] = scope.launch {
+                                animate(expansion, target) { value, _ -> expansion = value }
+                            }
+                        }
+                    }
+                }
+        ) {
             Scaffold(
                 modifier = Modifier
                     .fillMaxSize()
@@ -290,7 +354,8 @@ fun SpeedMeterApp() {
                         onDataUnitSelected = ::onDataUnitSelected,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(innerPadding)
+                            .padding(innerPadding),
+                        scrollState = settingsScrollState
                     )
                 }
             }

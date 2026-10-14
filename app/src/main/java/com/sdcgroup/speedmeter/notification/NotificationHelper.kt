@@ -3,10 +3,12 @@ package com.sdcgroup.speedmeter.notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Build
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.IconCompat
 import com.sdcgroup.speedmeter.R
 import com.sdcgroup.speedmeter.data.Speed
@@ -35,23 +37,41 @@ class NotificationHelper(private val context: Context) {
         }
     }
 
+    private fun isNightMode(): Boolean {
+        val mask = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        return mask == Configuration.UI_MODE_NIGHT_YES
+    }
+
     fun buildNotification(
         speed: Speed,
         iconBitmap: Bitmap,
         totalDataUsage: String,
         wifiDataUsage: String
     ): android.app.Notification {
-        return NotificationCompat.Builder(context, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(IconCompat.createWithBitmap(iconBitmap))
             .setCustomContentView(updateRemoteViews(speed, totalDataUsage, wifiDataUsage))
             .setCustomBigContentView(updateRemoteViews(speed, totalDataUsage, wifiDataUsage))
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setOngoing(true)
             .setLocalOnly(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-            .build()
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            val night = isNightMode()
+            val color = ContextCompat.getColor(
+                context,
+                if (night) R.color.notification_background_color else R.color.notification_accent_color
+            )
+            builder.setColor(color).setColorized(night)
+        } else {
+            builder.setColorized(false)
+        }
+
+        return builder.build()
     }
 
     fun notify(speed: Speed, iconBitmap: Bitmap, totalDataUsage: String, wifiDataUsage: String) {

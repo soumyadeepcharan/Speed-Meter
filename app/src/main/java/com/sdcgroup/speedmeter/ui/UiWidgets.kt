@@ -373,7 +373,7 @@ internal fun HelpFeedbackBottomSheet(onDismiss: () -> Unit) {
                     translationY = with(density) { (1f - contentAlpha) * 24.dp.toPx() }
                 }
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             HelpActionRow(

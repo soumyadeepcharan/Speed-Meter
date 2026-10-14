@@ -16,6 +16,7 @@
 - Each value has a small icon in front of it (down arrow, up arrow, data, and WiFi), so you can tell them apart at a glance.
 - Everything fits on one line in a notification that doesn't expand.
 - The notification appears right away when monitoring starts.
+- The notification color adapts to light or dark mode on older Android versions.
 - The status bar icon shows a live number: total speed, download only, or upload only. You choose.
 
 ### Turn it on or off
@@ -25,8 +26,10 @@
 - The **Quit** button in the top bar stops monitoring and removes the notification straight away.
 
 ### Find the settings easily
-- Pull down on the header to open the expanded top bar. The app name appears in the larger header, and the page dims slightly behind it.
-- Scroll the settings page as usual. Long lists keep the top bar steady.
+- Pull down from the top of the settings page to open the expanded header. The app name appears in the larger header, and the page dims slightly behind it.
+- Keep pulling to open it fully, or let go partway and it settles open or closed on its own.
+- Pull back up to return the header to normal.
+- Scroll the settings page as usual. The header only expands when the page is at the top.
 
 ### Choose how numbers look
 - **Speed units:** bytes per second (KB/s, MB/s) or bits per second (Kb/s, Mb/s).
@@ -49,6 +52,7 @@
 - Light mode, dark mode, or follow your phone's setting.
 - Screens use the full display edge to edge. Corners follow your phone's screen shape where the phone reports it.
 - The navigation bar area matches the screen background, so the bottom edge looks clean.
+- The settings and Help screens use slightly narrower side margins, so more of each row is visible.
 - The layout adapts to phones and tablets.
 - The Help & feedback sheet has a visible drag handle, so you can see you can pull it down.
 - The app follows your phone's rotation lock. If rotation is locked, the screen stays where it is.
@@ -104,6 +108,9 @@
 
 **Long numbers are cut off in the notification**
 - Values longer than the space available end with "…". Use a shorter unit (for example, MB/s instead of KB/s) to make them fit.
+
+**The header won't expand**
+- Scroll the settings page to the top first. The header only expands when the page is at the top.
 
 **I tapped Quit by accident**
 - Turn the indicator switch on again at the top of the settings page to start it.

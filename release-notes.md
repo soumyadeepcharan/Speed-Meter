@@ -1,44 +1,36 @@
-# Speed Meter v5.0.0
+# Speed Meter v6.0.0
 
-🎉 **Speed Meter v5.0.0 adds an expanding top bar, a softer scrim behind the Help sheet, and a cleaner bottom edge, and it updates the build tools.**
+🎉 **Speed Meter v6.0.0 refines the pull-down header, gives notifications a clearer color on older Android versions, and tightens the layout margins.**
 
 ---
 
 ## What's New
 
-### 📱 Expanding top bar
-- Pull down on the header to expand the top bar. The app name grows into a larger title as you pull.
-- Release partway and the header settles open or closed on its own.
-- The Quit button moves with the header, so it stays easy to reach.
+### 📱 Smoother pull-down header
+- Pull down from the top of the settings page to open the header. It follows your finger and settles open or closed when you let go.
+- The header only opens when the page is at the top, so scrolling the settings stays smooth.
+- Touches near the status bar and navigation bar are ignored, so system gestures keep working.
 
-### 🌫️ Scrim behind the Help sheet
-- When the Help & feedback sheet is open, the page behind it dims softly so the sheet stands out.
-- The sheet's bottom edge matches the navigation bar, so the transition looks seamless.
+### 🔔 Notification color that adapts
+- On Android 11 and older, the notification uses a color that matches light or dark mode.
+- On Android 12 and newer, the notification uses the standard system look.
 
-### 🧭 Cleaner bottom edge
-- The area behind the navigation bar now blends with the page or sheet color.
-- The settings page no longer stretches past its edge when you scroll to the end.
-
-### 🔤 Standard text styling
-- Text uses Material 3's standard styles, so it matches the rest of your system.
-
-### 🔔 Richer notification
-- The notification now includes an expanded layout, so the four values stay readable in the expanded view.
-- The notification appears immediately when monitoring starts.
+### 📐 Slimmer side margins
+- The settings page and Help & feedback sheet use narrower side margins, so more of each row is visible.
 
 ---
 
 ## Under the Hood
-- Build tools updated to Android Gradle Plugin 9.3.1, Kotlin 2.3.21, and Gradle 9.6.1.
-- Kotlin support is built into the Android Gradle Plugin.
-- Settings sections align with your phone's corner radius again.
-- Version bumped to **5.0.0** (version code 16).
+- Header gestures are handled by a dedicated pointer layer, which keeps them separate from the settings scroll.
+- The settings scroll position is shared with the header, so the header knows when the page is at the top.
+- Notification color is chosen by Android version and night mode.
+- Version bumped to **6.0.0** (version code 17).
 
 ---
 
 ## Changes to Know About
-- Pulling down on the header changes the layout of the top bar. Tap Quit or pull back up to return it to normal.
-- Settings section titles line up with your screen corners again.
+- Pull-down on the header only works when the settings page is scrolled to the top.
+- Side margins on the settings and Help screens are slightly narrower than in v5.0.0.
 
 ---
 

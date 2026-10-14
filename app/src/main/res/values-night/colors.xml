@@ -3,4 +3,6 @@
     <color name="ic_needle_color">#F5F6FA</color>
     <color name="notification_value_color">#FFFFFF</color>
     <color name="notification_icon_color">#000000</color>
+    <color name="notification_accent_color">#BDC1C6</color>
+    <color name="notification_background_color">#252525</color>
 </resources>
