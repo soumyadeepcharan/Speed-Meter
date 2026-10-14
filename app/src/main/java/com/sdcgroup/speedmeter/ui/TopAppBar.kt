@@ -13,6 +13,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
@@ -34,9 +35,8 @@ fun SpeedMeterTopAppBar(
     val quitLabel = stringResource(id = R.string.quit_button_label)
     key(themeMode) {
         TopAppBar(
-            modifier = modifier,
-            expandedHeight = 54.4.dp,
             title = { Text(title, modifier = Modifier.padding(start = 16.dp)) },
+            modifier = modifier,
             actions = {
                 Box(
                     modifier = Modifier.layout { measurable, _ ->
@@ -49,7 +49,7 @@ fun SpeedMeterTopAppBar(
                 ) {
                     Button(
                         onClick = onQuitClick,
-                        modifier = Modifier.size(width = 52.dp, height = 32.dp),
+                        modifier = Modifier.size(width = SwitchTrackWidth, height = SwitchTrackHeight),
                         contentPadding = PaddingValues(0.dp),
                         shapes = appButtonShapes(),
                         colors = ButtonDefaults.buttonColors(
@@ -61,6 +61,11 @@ fun SpeedMeterTopAppBar(
                     }
                 }
             },
+            expandedHeight = 54.4.dp,
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                scrolledContainerColor = MaterialTheme.colorScheme.surface,
+            ),
             scrollBehavior = scrollBehavior
         )
     }

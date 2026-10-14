@@ -16,6 +16,7 @@
 - Each value has a small icon in front of it (down arrow, up arrow, data, and WiFi), so you can tell them apart at a glance.
 - Everything fits on one line in a notification that doesn't expand.
 - The status bar icon shows a live number: total speed, download only, or upload only. You choose.
+- The notification shows up right away when monitoring starts. It is never delayed by the system.
 
 ### Turn it on or off
 - One switch on the home screen starts or stops the whole feature.
@@ -39,10 +40,11 @@
 - **Notification settings:** opens Android's notification settings for the app.
 
 ### Looks good and feels native
-- Built with Material Design 3, including its newer expressive style. Buttons change shape smoothly when pressed.
+- Built with Material Design 3, including its expressive style. Buttons change shape smoothly when pressed.
 - On Android 12 and newer, colors match your wallpaper (Material You).
 - Light mode, dark mode, or follow your phone's setting.
 - Screens use the full display edge to edge. Corners follow your phone's screen shape where the phone reports it.
+- The settings page scrolls cleanly above the navigation bar, with a matching bar at the bottom.
 - The layout adapts to phones and tablets.
 - The Help & feedback sheet has a visible drag handle, so you can see you can pull it down.
 - The app follows your phone's rotation lock. If rotation is locked, the screen stays where it is.
@@ -67,7 +69,7 @@
 
 ## How to Use
 
-1. Open the app and tap **Enable indicator** on the home screen.
+1. Open the app and turn on the **indicator** switch on the home screen.
 2. Allow notifications when asked. The indicator appears right away.
 3. Open **Notification settings** to choose:
    - Speed units
@@ -84,7 +86,7 @@
 ## Troubleshooting
 
 **The indicator isn't showing**
-- Make sure **Enable indicator** is on.
+- Make sure the indicator switch on the home screen is on.
 - Make sure notifications are allowed for Speed Meter in Android's settings.
 
 **Daily data looks wrong**
@@ -100,7 +102,7 @@
 - Values longer than the space available end with "…". Use a shorter unit (for example, MB/s instead of KB/s) to make them fit.
 
 **I tapped Quit by accident**
-- Tap **Enable indicator** on the home screen to start it again.
+- Turn the indicator switch on again on the home screen to start it.
 
 ---
 

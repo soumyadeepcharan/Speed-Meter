@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -66,6 +65,7 @@ import com.sdcgroup.speedmeter.service.GeneralSection
 import com.sdcgroup.speedmeter.service.SupportSection
 import com.sdcgroup.speedmeter.ui.AppAlertDialog
 import com.sdcgroup.speedmeter.ui.Switch
+import com.sdcgroup.speedmeter.ui.rememberDeviceCornerRadius
 import kotlinx.coroutines.launch
 
 internal enum class MoreAction {
@@ -81,7 +81,7 @@ internal data class MoreItemSpec(
 )
 
 @Composable
-fun SpeedMeterHomeMoreContent(
+fun SpeedMeterSettingsScreen(
     themeMode: ThemeMode,
     onThemeModeSelected: (ThemeMode, () -> Unit) -> Unit,
     speedUnit: SpeedUnit,
@@ -117,13 +117,14 @@ fun SpeedMeterHomeMoreContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .clip(MaterialTheme.shapes.extraLarge)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-                .navigationBarsPadding(),
+                .padding(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            HomeScreen()
-            MoreScreen(
+            IndicatorToggleCard()
+            SettingsSections(
                 themeMode = themeMode,
                 onThemeModeSelected = onThemeModeSelected,
                 speedUnit = speedUnit,
@@ -140,7 +141,7 @@ fun SpeedMeterHomeMoreContent(
 }
 
 @Composable
-fun MoreScreen(
+fun SettingsSections(
     themeMode: ThemeMode,
     onThemeModeSelected: (ThemeMode, () -> Unit) -> Unit,
     speedUnit: SpeedUnit,
@@ -269,7 +270,7 @@ fun MoreScreen(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        MoreSectionBlock(
+        SettingsSectionBlock(
             title = stringResource(id = R.string.more_section_notification),
             items = notificationSettingsItems,
             onItemAction = ::onItemAction,
@@ -302,12 +303,14 @@ fun MoreScreen(
 }
 
 @Composable
-internal fun MoreSectionBlock(
+internal fun SettingsSectionBlock(
     title: String,
     items: List<MoreItemSpec>,
     onItemAction: (MoreAction?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val cornerRadius = rememberDeviceCornerRadius()
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -316,7 +319,7 @@ internal fun MoreSectionBlock(
             text = title,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
+            modifier = Modifier.padding(start = cornerRadius, bottom = 2.dp),
         )
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
@@ -324,7 +327,7 @@ internal fun MoreSectionBlock(
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 items.forEachIndexed { index, item ->
-                    MoreListItem(
+                    SettingsListItem(
                         item = item,
                         onClick = { onItemAction(item.action) },
                     )
@@ -342,7 +345,7 @@ internal fun MoreSectionBlock(
 }
 
 @Composable
-private fun MoreListItem(
+private fun SettingsListItem(
     item: MoreItemSpec,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,

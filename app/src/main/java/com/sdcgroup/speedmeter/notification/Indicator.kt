@@ -80,7 +80,7 @@ internal fun isBatteryOptimizationDisabled(context: Context): Boolean {
 }
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun IndicatorToggleCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 

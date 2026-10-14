@@ -93,8 +93,8 @@ private const val ActionHoverStateLayerOpacity = 0.08f
 private const val ActionFocusStateLayerOpacity = 0.10f
 private const val ActionPressedStateLayerOpacity = 0.10f
 
-private val SwitchTrackWidth = 52.dp
-private val SwitchTrackHeight = 32.dp
+internal val SwitchTrackWidth = 52.dp
+internal val SwitchTrackHeight = 32.dp
 private val SwitchThumbSize = 24.dp
 private val SwitchThumbPadding = 4.dp
 
